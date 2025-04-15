@@ -1,33 +1,9 @@
-use std::env;
 use std::error::Error;
 use std::fs;
 
-pub struct Config {
-    pub query: String,
-    pub file_path: String,
-    pub ignore_case: bool,
-}
+pub mod models;
 
-impl Config {
-    pub fn build(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            return Err("Not enough arguments!");
-        }
-
-        let query = args[1].clone();
-        let file_path = args[2].clone();
-
-        let ignore_case = env::var("IGNORE_CASE").is_ok();
-
-        Ok(Config {
-            query,
-            file_path,
-            ignore_case,
-        })
-    }
-}
-
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+pub fn run(config: models::Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.file_path)?;
 
     let results = if config.ignore_case {
@@ -43,7 +19,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     contents
         .lines()
         .filter(|line| line.contains(query))
@@ -98,7 +74,7 @@ Trust me.";
             String::from("file_path"),
         ];
 
-        let config = Config::build(&args).unwrap();
+        let config = models::Config::build(&args).unwrap();
 
         assert_eq!(config.query, "query");
         assert_eq!(config.file_path, "file_path");
