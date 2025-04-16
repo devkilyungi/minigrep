@@ -72,24 +72,15 @@ mod tests {
     fn case_sensitive() {
         let query = "Rust";
         let contents = "\
-Rust:
-safe, fast, productive.
-Pick three.
-Duct tape.";
-
-        let search_results: Vec<models::SearchResult> = search(query, contents);
-        let formatted_results = search_results
-            .iter()
-            .map(|search_result| {
-                format!(
-                    "Line {}: {}",
-                    search_result.get_line_number(),
-                    search_result.get_line_content()
-                )
-            })
-            .collect::<Vec<String>>();
-
-        assert_eq!("Line 1: Rust:", formatted_results[0]);
+    Rust:
+    safe, fast, productive.
+    Pick three.
+    Duct tape.";
+    
+        let results = search(query, contents);
+        assert_eq!(1, results.len());
+        assert_eq!(1, results[0].get_line_number());
+        assert_eq!("Rust:", results[0].get_line_content());
     }
 
     #[test]
@@ -101,19 +92,10 @@ Duct tape.";
     Pick three.
     Trust me.";
 
-        let search_results: Vec<models::SearchResult> = search_case_insensitive(query, contents);
-        let formatted_results = search_results
-            .iter()
-            .map(|search_result| {
-                format!(
-                    "Line {}: {}",
-                    search_result.get_line_number(),
-                    search_result.get_line_content()
-                )
-            })
-            .collect::<Vec<String>>();
-
-        assert_eq!("Line 1: Rust:", formatted_results[0]);
+        let results = search_case_insensitive(query, contents);
+        assert_eq!(2, results.len());
+        assert_eq!(1, results[0].get_line_number());
+        assert_eq!("Rust:", results[0].get_line_content());
     }
 
     #[test]
