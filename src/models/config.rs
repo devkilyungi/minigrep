@@ -1,5 +1,7 @@
 use std::env;
 
+use super::ConfigError;
+
 pub struct Config {
     pub query: String,
     pub file_path_1: String,
@@ -8,9 +10,9 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn build(args: &[String]) -> Result<Config, &'static str> {
+    pub fn build(args: &[String]) -> Result<Config, ConfigError> {
         if args.len() < 3 {
-            return Err("Not enough arguments!");
+            return Err(ConfigError::NotEnoughArguments);
         }
 
         let query = args[1].clone();
@@ -30,7 +32,7 @@ impl Config {
                     ignore_case = match fourth.as_str() {
                         "-ic" => true,
                         "-cs" => false,
-                        _ => env::var("IGNORE_CASE").is_ok(),
+                        _ => return Err(ConfigError::InvalidFlag(fourth)),
                     };
                 } else {
                     // it's a second file
@@ -46,7 +48,7 @@ impl Config {
                     _ => env::var("IGNORE_CASE").is_ok(),
                 };
             }
-            _ => return Err("Too many arguments!"),
+            _ => return Err(ConfigError::TooManyArguments),
         }
 
         Ok(Config {
