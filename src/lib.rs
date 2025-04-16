@@ -6,33 +6,52 @@ pub mod models;
 pub fn run(config: models::Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.file_path)?;
 
-    let results = if config.ignore_case {
+    let search_results = if config.ignore_case {
         search_case_insensitive(&config.query, &contents)
     } else {
         search(&config.query, &contents)
     };
 
-    for line in results {
-        println!("{}", line);
+    let formatted_results = search_results
+        .iter()
+        .map(|search_result| {
+            format!(
+                "Line {}: {}",
+                search_result.get_line_number(),
+                search_result.get_line_content()
+            )
+        })
+        .collect::<Vec<String>>();
+
+    for line in formatted_results {
+        println!("{line}");
     }
 
     Ok(())
 }
 
-fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+fn search(query: &str, contents: &str) -> Vec<models::SearchResult> {
     contents
         .lines()
-        .filter(|line| line.contains(query))
-        .collect::<Vec<&str>>()
+        .enumerate()
+        .filter(|(_, line_content)| line_content.contains(query))
+        .map(|(line_number, line_content)| {
+            models::SearchResult::new(line_number, line_content.to_string())
+        })
+        .collect()
 }
 
-fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+fn search_case_insensitive(query: &str, contents: &str) -> Vec<models::SearchResult> {
     let query = query.to_lowercase();
 
     contents
         .lines()
-        .filter(|line| line.to_lowercase().contains(&query))
-        .collect::<Vec<&str>>()
+        .enumerate()
+        .filter(|(_, line_content)| line_content.to_lowercase().contains(&query))
+        .map(|(line_number, line_content)| {
+            models::SearchResult::new(line_number, line_content.to_string())
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -41,29 +60,50 @@ mod tests {
 
     #[test]
     fn case_sensitive() {
-        let query = "duct";
+        let query = "Rust";
         let contents = "\
 Rust:
 safe, fast, productive.
 Pick three.
 Duct tape.";
 
-        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+        let search_results: Vec<models::SearchResult> = search(query, contents);
+        let formatted_results = search_results
+            .iter()
+            .map(|search_result| {
+                format!(
+                    "Line {}: {}",
+                    search_result.get_line_number(),
+                    search_result.get_line_content()
+                )
+            })
+            .collect::<Vec<String>>();
+
+        assert_eq!("Line 1: Rust:", formatted_results[0]);
     }
 
     #[test]
     fn case_insensitive() {
         let query = "rUsT";
         let contents = "\
-Rust:
-safe, fast, productive.
-Pick three.
-Trust me.";
+    Rust:
+    safe, fast, productive.
+    Pick three.
+    Trust me.";
 
-        assert_eq!(
-            vec!["Rust:", "Trust me."],
-            search_case_insensitive(query, contents)
-        );
+        let search_results: Vec<models::SearchResult> = search_case_insensitive(query, contents);
+        let formatted_results = search_results
+            .iter()
+            .map(|search_result| {
+                format!(
+                    "Line {}: {}",
+                    search_result.get_line_number(),
+                    search_result.get_line_content()
+                )
+            })
+            .collect::<Vec<String>>();
+
+        assert_eq!("Line 1: Rust:", formatted_results[0]);
     }
 
     #[test]
