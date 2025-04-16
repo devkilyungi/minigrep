@@ -4,27 +4,37 @@ use std::fs;
 pub mod models;
 
 pub fn run(config: models::Config) -> Result<(), Box<dyn Error>> {
-    let contents = fs::read_to_string(config.file_path)?;
-
-    let search_results = if config.ignore_case {
-        search_case_insensitive(&config.query, &contents)
+    let file_1 = fs::read_to_string(&config.file_path_1)?;
+    let file_2 = if config.file_path_2.is_empty() {
+        None
     } else {
-        search(&config.query, &contents)
+        Some(fs::read_to_string(&config.file_path_2)?)
     };
 
-    let formatted_results = search_results
-        .iter()
-        .map(|search_result| {
-            format!(
-                "Line {}: {}",
-                search_result.get_line_number(),
-                search_result.get_line_content()
-            )
-        })
-        .collect::<Vec<String>>();
+    // Helper closure to print results for any file
+    let print_results = |file_label: &str, contents: &str| {
+        let search_results = if config.ignore_case {
+            search_case_insensitive(&config.query, contents)
+        } else {
+            search(&config.query, contents)
+        };
 
-    for line in formatted_results {
-        println!("{line}");
+        if search_results.is_empty() {
+            println!("{file_label}: No matches found.");
+        } else {
+            println!("Matches in {file_label}:");
+            for res in search_results {
+                println!("Line {}: {}", res.get_line_number(), res.get_line_content());
+            }
+        }
+    };
+
+    // Search file 1
+    print_results(&config.file_path_1, &file_1);
+
+    // If file 2 exists, search it too
+    if let Some(file_2_contents) = file_2 {
+        print_results(&config.file_path_2, &file_2_contents);
     }
 
     Ok(())
@@ -117,6 +127,6 @@ Duct tape.";
         let config = models::Config::build(&args).unwrap();
 
         assert_eq!(config.query, "query");
-        assert_eq!(config.file_path, "file_path");
+        assert_eq!(config.file_path_1, "file_path");
     }
 }
