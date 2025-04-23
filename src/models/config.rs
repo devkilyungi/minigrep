@@ -1,13 +1,13 @@
 use std::env;
 
-use super::ConfigError;
+use super::{ConfigError, ContextFlag};
 
 pub struct Config {
     pub query: String,
     pub file_path_1: String,
     pub file_path_2: String, // can be an empty string or contain the second file name
     pub ignore_case: bool,
-    pub context_flag: String, // TODO: Implement context flag model
+    pub context_flag: ContextFlag,
     pub context_count: u8,
 }
 
@@ -21,7 +21,7 @@ impl Config {
         let file_path_1 = args[2].clone();
         let mut file_path_2 = "".to_string();
         let mut ignore_case = env::var("IGNORE_CASE").is_ok();
-        let mut context_flag = "after".to_string();
+        let mut context_flag = ContextFlag::After;
         let mut context_count = 0;
 
         match args.len() {
@@ -40,9 +40,9 @@ impl Config {
                     // it's a context flag
                     context_count = 1;
                     context_flag = match fourth.as_str() {
-                        "--before" => "before".to_string(),
-                        "--after" => "after".to_string(),
-                        "--context" => "context".to_string(),
+                        "--before" => ContextFlag::Before,
+                        "--after" => ContextFlag::After,
+                        "--context" => ContextFlag::Context,
                         _ => return Err(ConfigError::InvalidContextFlag(fourth)),
                     };
                 } else if fourth.starts_with('-') {
@@ -71,9 +71,9 @@ impl Config {
                     file_path_2 = fourth;
                     context_count = 1;
                     context_flag = match fifth.as_str() {
-                        "--before" => "before".to_string(),
-                        "--after" => "after".to_string(),
-                        "--context" => "context".to_string(),
+                        "--before" => ContextFlag::Before,
+                        "--after" => ContextFlag::After,
+                        "--context" => ContextFlag::Context,
                         _ => return Err(ConfigError::InvalidContextFlag(fifth)),
                     };
                 } else if fifth.starts_with('-') {
@@ -88,9 +88,9 @@ impl Config {
                 } else {
                     // it's a context count
                     context_flag = match fourth.as_str() {
-                        "--before" => "before".to_string(),
-                        "--after" => "after".to_string(),
-                        "--context" => "context".to_string(),
+                        "--before" => ContextFlag::Before,
+                        "--after" => ContextFlag::After,
+                        "--context" => ContextFlag::Context,
                         _ => return Err(ConfigError::InvalidContextFlag(fifth)),
                     };
                     context_count = match fifth.parse() {
@@ -108,9 +108,9 @@ impl Config {
 
                 file_path_2 = fourth;
                 context_flag = match fifth.as_str() {
-                    "--before" => "before".to_string(),
-                    "--after" => "after".to_string(),
-                    "--context" => "context".to_string(),
+                    "--before" => ContextFlag::Before,
+                    "--after" => ContextFlag::After,
+                    "--context" => ContextFlag::Context,
                     _ => return Err(ConfigError::InvalidContextFlag(fifth)),
                 };
                 context_count = match sixth.parse() {
@@ -134,9 +134,9 @@ impl Config {
                     _ => return Err(ConfigError::InvalidCaseFlag(fifth)),
                 };
                 context_flag = match sixth.as_str() {
-                    "--before" => "before".to_string(),
-                    "--after" => "after".to_string(),
-                    "--context" => "context".to_string(),
+                    "--before" => ContextFlag::Before,
+                    "--after" => ContextFlag::After,
+                    "--context" => ContextFlag::Context,
                     _ => return Err(ConfigError::InvalidContextFlag(sixth)),
                 };
                 context_count = match seventh.parse() {

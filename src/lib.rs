@@ -16,7 +16,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
         let search_results = search(
             &config.query,
             contents,
-            &config.context_flag,
+            config.context_flag.as_str(),
             Some(config.context_count as usize),
             config.ignore_case,
         );
@@ -125,7 +125,7 @@ fn search(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::Config;
+    use crate::models::{Config, ContextFlag};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -146,8 +146,9 @@ mod tests {
     fn test_search_no_matches() {
         let query = "nonexistent";
         let contents = "Line 1\nLine 2\nLine 3";
+        let context_flag = ContextFlag::After.as_str();
 
-        let results = search(query, contents, "after", Some(1), true);
+        let results = search(query, contents, context_flag, Some(1), true);
         assert_eq!(results.len(), 0);
     }
 
@@ -158,14 +159,11 @@ mod tests {
 
         let results = search(query, contents, "", None, true);
 
-        // Print formatted results for inspection
-        println!("Results: {:#?}, length: {}", results, results.len());
-
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].get_line_number(), 2);
         assert_eq!(results[0].get_line_content(), "Line 2");
     }
-    
+
     #[test]
     fn test_search_case_insensitive() {
         let query = "line 2";
@@ -185,8 +183,9 @@ mod tests {
     fn test_search_before_only() {
         let query = "Line 3";
         let contents = "Line 1\nLine 2\nLine 3\nLine 4";
+        let context_flag = ContextFlag::Before.as_str();
 
-        let results = search(query, contents, "before", Some(3), true);
+        let results = search(query, contents, context_flag, Some(3), true);
         assert_eq!(results.len(), 3);
 
         // Sort by line number to ensure consistent order
@@ -202,8 +201,9 @@ mod tests {
     fn test_search_after_only() {
         let query = "Line 2";
         let contents = "Line 1\nLine 2\nLine 3\nLine 4";
+        let context_flag = ContextFlag::After.as_str();
 
-        let results = search(query, contents, "after", Some(3), true);
+        let results = search(query, contents, context_flag, Some(3), true);
         assert_eq!(results.len(), 3);
 
         let mut results_sorted = results.clone();
@@ -218,8 +218,9 @@ mod tests {
     fn test_search_before_and_after() {
         let query = "Line 3";
         let contents = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5";
+        let context_flag = ContextFlag::Context.as_str();
 
-        let results = search(query, contents, "context", Some(1), true);
+        let results = search(query, contents, context_flag, Some(1), true);
         assert_eq!(results.len(), 3);
 
         let mut results_sorted = results.clone();
@@ -234,8 +235,9 @@ mod tests {
     fn test_search_at_beginning() {
         let query = "Line 1";
         let contents = "Line 1\nLine 2\nLine 3";
+        let context_flag = ContextFlag::Context.as_str();
 
-        let results = search(query, contents, "context", Some(1), true);
+        let results = search(query, contents, context_flag, Some(1), true);
         assert_eq!(results.len(), 2);
 
         let mut results_sorted = results.clone();
@@ -249,8 +251,9 @@ mod tests {
     fn test_search_at_end() {
         let query = "Line 3";
         let contents = "Line 1\nLine 2\nLine 3";
+        let context_flag = ContextFlag::Context.as_str();
 
-        let results = search(query, contents, "context", Some(1), true);
+        let results = search(query, contents, context_flag, Some(1), true);
         assert_eq!(results.len(), 2);
 
         let mut results_sorted = results.clone();
@@ -264,8 +267,9 @@ mod tests {
     fn test_search_multiple_matches() {
         let query = "Line";
         let contents = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5";
+        let context_flag = ContextFlag::After.as_str();
 
-        let results = search(query, contents, "after", Some(1), true);
+        let results = search(query, contents, context_flag, Some(1), true);
 
         // All lines should be included due to overlapping contexts
         assert_eq!(results.len(), 5);
@@ -275,8 +279,9 @@ mod tests {
     fn test_search_overlapping() {
         let query = "match";
         let contents = "Line 1\nLine 2\nmatch 3\nLine 4\nmatch 5\nLine 6";
+        let context_flag = ContextFlag::Context.as_str();
 
-        let results = search(query, contents, "context", Some(1), true);
+        let results = search(query, contents, context_flag, Some(1), true);
 
         // Should include all lines from 1-6 due to overlapping contexts
         assert_eq!(results.len(), 5);
@@ -295,8 +300,9 @@ mod tests {
     fn test_search_non_overlapping() {
         let query = "match";
         let contents = "Line 1\nmatch 2\nLine 3\nLine 4\nmatch 5\nLine 6";
+        let context_flag = ContextFlag::Context.as_str();
 
-        let results = search(query, contents, "context", Some(1), true);
+        let results = search(query, contents, context_flag, Some(1), true);
 
         // Should have two separate groups: [0,1,2] and [3,4,5]
         assert_eq!(results.len(), 6);
@@ -316,8 +322,9 @@ mod tests {
     fn test_search_large_ranges() {
         let query = "unique";
         let contents = "Line 1\nLine 2\nLine 3\nLine 4\nunique line\nLine 6\nLine 7";
+        let context_flag = ContextFlag::Context.as_str();
 
-        let results = search(query, contents, "context", Some(10), true);
+        let results = search(query, contents, context_flag, Some(10), true);
 
         // Should include all lines despite requesting more context than exists
         assert_eq!(results.len(), 7);
@@ -327,8 +334,9 @@ mod tests {
     fn test_search_empty_file() {
         let query = "anything";
         let contents = "";
+        let context_flag = ContextFlag::After.as_str();
 
-        let results = search(query, contents, "after", Some(1), true);
+        let results = search(query, contents, context_flag, Some(1), true);
         assert_eq!(results.len(), 0);
     }
 
@@ -336,8 +344,9 @@ mod tests {
     fn test_search_multiple_matches_same_line() {
         let query = "match";
         let contents = "match in a match line\nother line";
+        let context_flag = ContextFlag::Context.as_str();
 
-        let results = search(query, contents, "context", Some(1), true);
+        let results = search(query, contents, context_flag, Some(1), true);
 
         // Should include lines 0 and 1 without duplicates
         assert_eq!(results.len(), 2);
