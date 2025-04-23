@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub struct SearchResult {
     line_number: usize,
     line_content: String,
