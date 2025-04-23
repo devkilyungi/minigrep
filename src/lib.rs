@@ -35,7 +35,35 @@ pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
         // Add to match count
         let match_count = search_results
             .iter()
-            .map(|result| result.get_matching_patterns().len())
+            .filter(|result| !result.get_matching_patterns().is_empty())
+            .flat_map(|result| {
+                let line = result.get_line_content();
+                result.get_matching_patterns().iter().map(move |pattern| {
+                    let mut count = 0;
+                    let mut start = 0;
+                    
+                    let pattern_lower = if config.ignore_case {
+                        pattern.to_lowercase()
+                    } else {
+                        pattern.clone()
+                    };
+                    
+                    let line_lower = if config.ignore_case {
+                        line.to_lowercase()
+                    } else {
+                        line.to_string()
+                    };
+
+                    while let Some(position) = line_lower[start..].find(&pattern_lower) {
+                        count += 1;
+                        start += position + pattern_lower.len();
+                        if start >= line_lower.len() {
+                            break;
+                        }
+                    }
+                    count
+                })
+            })
             .sum::<usize>();
 
         total_matches += match_count;

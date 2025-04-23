@@ -48,7 +48,7 @@ impl Config {
                         "--stats" => {
                             show_stats = true;
                             ContextFlag::Stats
-                        },
+                        }
                         _ => return Err(ConfigError::InvalidContextFlag(fourth)),
                     };
                 } else if fourth.starts_with('-') {
@@ -83,7 +83,7 @@ impl Config {
                         "--stats" => {
                             show_stats = true;
                             ContextFlag::Stats
-                        },
+                        }
                         _ => return Err(ConfigError::InvalidContextFlag(fifth)),
                     };
                 } else if fifth.starts_with('-') {
@@ -104,7 +104,7 @@ impl Config {
                         "--stats" => {
                             show_stats = true;
                             ContextFlag::Stats
-                        },
+                        }
                         _ => return Err(ConfigError::InvalidContextFlag(fifth)),
                     };
                     context_count = match fifth.parse() {
@@ -115,26 +115,64 @@ impl Config {
             }
             6 => {
                 // [binary, query, file_path_1, file_path_2, context_flag, context_count]
+                // or [binary, query, file_path_1, flag, context_flag, context_count]
+                // or [binary, query, file_path_1, file_path_2, flag, context_flag]
 
                 let fourth = args[3].clone();
                 let fifth = args[4].clone();
                 let sixth = args[5].clone();
 
-                file_path_2 = fourth;
-                context_flag = match fifth.as_str() {
-                    "--before" => ContextFlag::Before,
-                    "--after" => ContextFlag::After,
-                    "--context" => ContextFlag::Context,
-                    "--stats" => {
-                        show_stats = true;
-                        ContextFlag::Stats
-                    },
-                    _ => return Err(ConfigError::InvalidContextFlag(fifth)),
-                };
-                context_count = match sixth.parse() {
-                    Ok(count) => count,
-                    Err(_) => return Err(ConfigError::InvalidContextCount(fifth)),
-                };
+                if fourth.starts_with('-') {
+                    // it's a flag
+                    ignore_case = match fourth.as_str() {
+                        "-ic" => true,
+                        "-cs" => false,
+                        // ignore_case already set from env
+                        _ => return Err(ConfigError::InvalidCaseFlag(fourth)),
+                    };
+                } else {
+                    // it's file path 2
+                    file_path_2 = fourth;
+                }
+
+                if fifth.starts_with('-') {
+                    // it's a flag
+                    ignore_case = match fifth.as_str() {
+                        "-ic" => true,
+                        "-cs" => false,
+                        // ignore_case already set from env
+                        _ => return Err(ConfigError::InvalidCaseFlag(fifth)),
+                    };
+                } else {
+                    context_flag = match fifth.as_str() {
+                        "--before" => ContextFlag::Before,
+                        "--after" => ContextFlag::After,
+                        "--context" => ContextFlag::Context,
+                        "--stats" => {
+                            show_stats = true;
+                            ContextFlag::Stats
+                        }
+                        _ => return Err(ConfigError::InvalidContextFlag(fifth)),
+                    };
+                }
+
+                if sixth.starts_with("--") {
+                    context_flag = match sixth.as_str() {
+                        "--before" => ContextFlag::Before,
+                        "--after" => ContextFlag::After,
+                        "--context" => ContextFlag::Context,
+                        "--stats" => {
+                            show_stats = true;
+                            ContextFlag::Stats
+                        }
+                        _ => return Err(ConfigError::InvalidContextFlag(sixth)),
+                    };
+                } else {
+                    context_count = match sixth.parse() {
+                        Ok(count) => count,
+                        Err(_) => return Err(ConfigError::InvalidContextCount(sixth)),
+                    };
+                }
             }
             7 => {
                 // [binary, query, file_path_1, file_path_2, flag, context_flag, context_count]
@@ -145,26 +183,78 @@ impl Config {
                 let seventh = args[6].clone();
 
                 file_path_2 = fourth;
+
+                // Handle case sensitivity flag
                 ignore_case = match fifth.as_str() {
                     "-ic" => true,
                     "-cs" => false,
                     // ignore_case already set from env
                     _ => return Err(ConfigError::InvalidCaseFlag(fifth)),
                 };
+
+                // Handle context flag and stats
+                if sixth == "--stats" {
+                    show_stats = true;
+                    context_flag = ContextFlag::Stats;
+                } else {
+                    context_flag = match sixth.as_str() {
+                        "--before" => ContextFlag::Before,
+                        "--after" => ContextFlag::After,
+                        "--context" => ContextFlag::Context,
+                        "--stats" => {
+                            show_stats = true;
+                            ContextFlag::Stats
+                        }
+                        _ => return Err(ConfigError::InvalidContextFlag(sixth)),
+                    };
+                }
+
+                // Handle context count (if not stats)
+                if !show_stats || context_flag != ContextFlag::Stats {
+                    context_count = match seventh.parse() {
+                        Ok(count) => count,
+                        Err(_) => return Err(ConfigError::InvalidContextCount(seventh)),
+                    };
+                }
+            }
+            8 => {
+                // [binary, query, file_path_1, file_path_2, flag, context_flag, context_count, --stats]
+                let fourth = args[3].clone();
+                let fifth = args[4].clone();
+                let sixth = args[5].clone();
+                let seventh = args[6].clone();
+                let eighth = args[7].clone();
+
+                file_path_2 = fourth;
+
+                // Handle case sensitivity flag
+                ignore_case = match fifth.as_str() {
+                    "-ic" => true,
+                    "-cs" => false,
+                    // ignore_case already set from env
+                    _ => return Err(ConfigError::InvalidCaseFlag(fifth)),
+                };
+
+                // Handle context flag
                 context_flag = match sixth.as_str() {
                     "--before" => ContextFlag::Before,
                     "--after" => ContextFlag::After,
                     "--context" => ContextFlag::Context,
-                    "--stats" => {
-                        show_stats = true;
-                        ContextFlag::Stats
-                    },
                     _ => return Err(ConfigError::InvalidContextFlag(sixth)),
                 };
+
+                // Handle context count
                 context_count = match seventh.parse() {
                     Ok(count) => count,
                     Err(_) => return Err(ConfigError::InvalidContextCount(seventh)),
                 };
+
+                // Handle stats flag
+                if eighth == "--stats" {
+                    show_stats = true;
+                } else {
+                    return Err(ConfigError::InvalidStatsFlag(eighth));
+                }
             }
             _ => return Err(ConfigError::TooManyArguments),
         }
