@@ -1,7 +1,5 @@
-use std::env;
-use std::process;
-
-use minigrep::models::Config;
+use minigrep::{self, models::Config};
+use std::{env, process};
 
 fn main() {
     let args: Vec<String> = env::args().collect();

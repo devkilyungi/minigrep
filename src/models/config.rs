@@ -5,7 +5,7 @@ use super::ConfigError;
 pub struct Config {
     pub query: String,
     pub file_path_1: String,
-    pub file_path_2: String,
+    pub file_path_2: String, // can be an empty string or contain the second file name
     pub ignore_case: bool,
 }
 
@@ -42,10 +42,11 @@ impl Config {
             5 => {
                 file_path_2 = args[3].clone();
                 let fifth = args[4].clone();
+                // fifth argument must be a flag
                 ignore_case = match fifth.as_str() {
                     "-ic" => true,
                     "-cs" => false,
-                    _ => env::var("IGNORE_CASE").is_ok(),
+                    _ => return Err(ConfigError::InvalidFlag(fifth)),
                 };
             }
             _ => return Err(ConfigError::TooManyArguments),

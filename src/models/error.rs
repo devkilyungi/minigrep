@@ -1,3 +1,5 @@
+use std::{error, fmt};
+
 #[derive(Debug)]
 pub enum ConfigError {
     NotEnoughArguments,
@@ -5,14 +7,14 @@ pub enum ConfigError {
     InvalidFlag(String),
 }
 
-impl std::fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ConfigError::NotEnoughArguments => write!(f, "Not enough arguments"),
             ConfigError::TooManyArguments => write!(f, "Too many arguments"),
-            ConfigError::InvalidFlag(flag) => write!(f, "Invalid flag: {}", flag),
+            ConfigError::InvalidFlag(flag) => write!(f, "Invalid flag: '{}'", flag),
         }
     }
 }
 
-impl std::error::Error for ConfigError {}
+impl error::Error for ConfigError {}

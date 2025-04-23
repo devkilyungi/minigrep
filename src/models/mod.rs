@@ -1,7 +1,7 @@
 mod config;
-mod search_result;
 mod error;
+mod search_result;
 
 pub use config::Config;
+use error::ConfigError;
 pub use search_result::SearchResult;
-pub use error::ConfigError;

@@ -1,9 +1,10 @@
-use std::error::Error;
-use std::fs;
+use std::{error, fs};
+
+use models::{Config, SearchResult};
 
 pub mod models;
 
-pub fn run(config: models::Config) -> Result<(), Box<dyn Error>> {
+pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
     let file_1 = fs::read_to_string(&config.file_path_1)?;
     let file_2 = if config.file_path_2.is_empty() {
         None
@@ -23,8 +24,8 @@ pub fn run(config: models::Config) -> Result<(), Box<dyn Error>> {
             println!("{file_label}: No matches found.");
         } else {
             println!("Matches in {file_label}:");
-            for res in search_results {
-                println!("Line {}: {}", res.get_line_number(), res.get_line_content());
+            for result in search_results {
+                result.display();
             }
         }
     };
@@ -40,32 +41,30 @@ pub fn run(config: models::Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn search(query: &str, contents: &str) -> Vec<models::SearchResult> {
+fn search(query: &str, contents: &str) -> Vec<SearchResult> {
     contents
         .lines()
         .enumerate()
         .filter(|(_, line_content)| line_content.contains(query))
-        .map(|(line_number, line_content)| {
-            models::SearchResult::new(line_number, line_content.to_string())
-        })
+        .map(|(line_number, line_content)| SearchResult::new(line_number, line_content.to_string()))
         .collect()
 }
 
-fn search_case_insensitive(query: &str, contents: &str) -> Vec<models::SearchResult> {
+fn search_case_insensitive(query: &str, contents: &str) -> Vec<SearchResult> {
     let query = query.to_lowercase();
 
     contents
         .lines()
         .enumerate()
         .filter(|(_, line_content)| line_content.to_lowercase().contains(&query))
-        .map(|(line_number, line_content)| {
-            models::SearchResult::new(line_number, line_content.to_string())
-        })
+        .map(|(line_number, line_content)| SearchResult::new(line_number, line_content.to_string()))
         .collect()
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::models::Config;
+
     use super::*;
 
     #[test]
@@ -76,7 +75,7 @@ mod tests {
     safe, fast, productive.
     Pick three.
     Duct tape.";
-    
+
         let results = search(query, contents);
         assert_eq!(1, results.len());
         assert_eq!(1, results[0].get_line_number());
@@ -106,7 +105,7 @@ mod tests {
             String::from("file_path"),
         ];
 
-        let config = models::Config::build(&args).unwrap();
+        let config = Config::build(&args).unwrap();
 
         assert_eq!(config.query, "query");
         assert_eq!(config.file_path_1, "file_path");
