@@ -4,6 +4,7 @@ pub enum ContextFlag {
     Before,
     After,
     Context,
+    Stats,
 }
 
 impl ContextFlag {
@@ -12,6 +13,7 @@ impl ContextFlag {
             "before" => Self::Before,
             "after" => Self::After,
             "context" => Self::Context,
+            "stats" => Self::Stats,
             _ => panic!("Invalid context flag"),
         }
     }
@@ -21,6 +23,7 @@ impl ContextFlag {
             ContextFlag::Before => "before",
             ContextFlag::After => "after",
             ContextFlag::Context => "context",
+            ContextFlag::Stats => "stats",
         }
     }
 }
@@ -31,6 +34,7 @@ impl fmt::Display for ContextFlag {
             ContextFlag::Before => write!(f, "before"),
             ContextFlag::After => write!(f, "after"),
             ContextFlag::Context => write!(f, "context"),
+            ContextFlag::Stats => write!(f, "stats"),
         }
     }
 }

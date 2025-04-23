@@ -4,15 +4,26 @@ use std::{collections::HashSet, error, fs};
 pub mod models;
 
 pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
+    let start_time = std::time::Instant::now();
+    let mut total_lines = 0;
+    let mut total_matches = 0;
+    let mut files_searched = 0;
+
     let file_1 = fs::read_to_string(&config.file_path_1)?;
+    total_lines += file_1.lines().count();
+    files_searched += 1;
+
     let file_2 = if config.file_path_2.is_empty() {
         None
     } else {
-        Some(fs::read_to_string(&config.file_path_2)?)
+        let content = fs::read_to_string(&config.file_path_2)?;
+        total_lines += content.lines().count();
+        files_searched += 1;
+        Some(content)
     };
 
     // Helper closure to print results for any file
-    let print_results = |file_label: &str, contents: &str| {
+    let mut print_results = |file_label: &str, contents: &str| {
         let search_results = search(
             &config.query,
             contents,
@@ -20,6 +31,14 @@ pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
             Some(config.context_count as usize),
             config.ignore_case,
         );
+
+        // Add to match count
+        let match_count = search_results
+            .iter()
+            .map(|result| result.get_matching_patterns().len())
+            .sum::<usize>();
+
+        total_matches += match_count;
 
         if search_results.is_empty() {
             println!("{file_label}: No matches found.");
@@ -37,6 +56,18 @@ pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
     // If file 2 exists, search it too
     if let Some(file_2_contents) = file_2 {
         print_results(&config.file_path_2, &file_2_contents);
+    }
+
+    // Print stats if requested
+    if config.show_stats {
+        let duration = start_time.elapsed();
+        println!("\n--- Search Statistics ---");
+        println!("Pattern searched: '{}'", &config.query);
+        println!("Files searched: {}", files_searched);
+        println!("Total lines searched: {}", total_lines);
+        println!("Matches found: {}", total_matches);
+        println!("Search completed in: {:.2?}", duration);
+        println!("------------------------");
     }
 
     Ok(())

@@ -9,6 +9,7 @@ pub struct Config {
     pub ignore_case: bool,
     pub context_flag: ContextFlag,
     pub context_count: u8,
+    pub show_stats: bool,
 }
 
 impl Config {
@@ -23,6 +24,7 @@ impl Config {
         let mut ignore_case = env::var("IGNORE_CASE").is_ok();
         let mut context_flag = ContextFlag::After;
         let mut context_count = 0;
+        let mut show_stats = false;
 
         match args.len() {
             3 => {
@@ -43,6 +45,10 @@ impl Config {
                         "--before" => ContextFlag::Before,
                         "--after" => ContextFlag::After,
                         "--context" => ContextFlag::Context,
+                        "--stats" => {
+                            show_stats = true;
+                            ContextFlag::Stats
+                        },
                         _ => return Err(ConfigError::InvalidContextFlag(fourth)),
                     };
                 } else if fourth.starts_with('-') {
@@ -74,6 +80,10 @@ impl Config {
                         "--before" => ContextFlag::Before,
                         "--after" => ContextFlag::After,
                         "--context" => ContextFlag::Context,
+                        "--stats" => {
+                            show_stats = true;
+                            ContextFlag::Stats
+                        },
                         _ => return Err(ConfigError::InvalidContextFlag(fifth)),
                     };
                 } else if fifth.starts_with('-') {
@@ -91,6 +101,10 @@ impl Config {
                         "--before" => ContextFlag::Before,
                         "--after" => ContextFlag::After,
                         "--context" => ContextFlag::Context,
+                        "--stats" => {
+                            show_stats = true;
+                            ContextFlag::Stats
+                        },
                         _ => return Err(ConfigError::InvalidContextFlag(fifth)),
                     };
                     context_count = match fifth.parse() {
@@ -111,6 +125,10 @@ impl Config {
                     "--before" => ContextFlag::Before,
                     "--after" => ContextFlag::After,
                     "--context" => ContextFlag::Context,
+                    "--stats" => {
+                        show_stats = true;
+                        ContextFlag::Stats
+                    },
                     _ => return Err(ConfigError::InvalidContextFlag(fifth)),
                 };
                 context_count = match sixth.parse() {
@@ -137,6 +155,10 @@ impl Config {
                     "--before" => ContextFlag::Before,
                     "--after" => ContextFlag::After,
                     "--context" => ContextFlag::Context,
+                    "--stats" => {
+                        show_stats = true;
+                        ContextFlag::Stats
+                    },
                     _ => return Err(ConfigError::InvalidContextFlag(sixth)),
                 };
                 context_count = match seventh.parse() {
@@ -154,6 +176,7 @@ impl Config {
             ignore_case,
             context_flag,
             context_count,
+            show_stats,
         })
     }
 }
