@@ -26,7 +26,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
         } else {
             println!("Matches in {file_label}:");
             for result in search_results {
-                result.display();
+                result.display(&config.query, config.ignore_case);
             }
         }
     };
