@@ -150,34 +150,47 @@ fn display_search_result(search_result: &SearchResult, ignore_case: bool) {
     }
 }
 
+// In display.rs, update print_help function:
 pub fn print_help() {
-    println!("minigrep - Search for patterns in files");
+    println!(
+        "minigrep v{} - Search for patterns in files",
+        env!("CARGO_PKG_VERSION")
+    );
     println!();
     println!("USAGE:");
     println!("    minigrep PATTERN FILENAME [SECOND_FILENAME] [OPTIONS]");
     println!();
-    println!("OPTIONS:");
-    println!("    -ic                      Ignore case when searching");
-    println!("    -cs                      Force case-sensitive search");
-    println!("    --before N or --b N      Show N lines before each match");
-    println!("    --after N or --a N       Show N lines after each match");
-    println!("    --context N or --c N     Show N lines before and after each match");
-    println!("    --stats or --s           Display search statistics");
-    println!(
-        "    --recursive or --r       Recursively search through all files in a directory and its subdirectories"
-    );
-    println!("    --help or -h             Display this help message");
-    println!("    --version or -v          Display version information");
+    println!("ARGUMENTS:");
+    println!("    PATTERN               Text or regex pattern to search for");
+    println!("    FILENAME              File or directory to search in");
+    println!("    [SECOND_FILENAME]     Optional second file to search in");
     println!();
-    println!("EXAMPLES:");
-    println!("    minigrep to poem.txt                   Search for 'to' in poem.txt");
-    println!("    minigrep to poem.txt -ic               Case-insensitive search");
-    println!("    minigrep to poem.txt sunrise.txt       Search in multiple files");
-    println!("    minigrep \"sun|moon\" sunrise.txt        Search for multiple patterns");
-    println!("    minigrep to poem.txt --context 2       Show context around matches");
+    println!("SEARCH OPTIONS:");
+    println!("    -ic                   Ignore case when searching");
+    println!("    -cs                   Force case-sensitive search (overrides IGNORE_CASE env)");
+    println!();
+    println!("CONTEXT OPTIONS:");
+    println!("    --before N, --b N     Show N lines before each match");
+    println!("    --after N, --a N      Show N lines after each match");
+    println!("    --context N, --c N    Show N lines before and after each match");
+    println!();
+    println!("OUTPUT OPTIONS:");
+    println!("    --stats, --s          Display search statistics");
+    println!();
+    println!("DIRECTORY OPTIONS:");
+    println!("    --recursive, --r      Recursively search through all files in a directory");
+    println!();
+    println!("OTHER OPTIONS:");
+    println!("    --help, -h            Display this help message");
+    println!("    --version, -v         Display version information");
+    println!();
+    println!("REGEX EXAMPLES:");
+    println!("    minigrep \"\\bw\\w+\" poem.txt     Find all words starting with 'w'");
+    println!("    minigrep \"s.n\" sunrise.txt     Match any character between 's' and 'n'");
+    println!("    minigrep \"\\w+ing\\b\" -ic       Find words ending in 'ing' (case insensitive)");
     println!();
     println!("ENVIRONMENT:");
     println!(
-        "    IGNORE_CASE             Set to any value to enable case-insensitive search by default"
+        "    IGNORE_CASE           Set to any value to enable case-insensitive search by default"
     );
 }
