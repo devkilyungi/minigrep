@@ -21,7 +21,38 @@ impl SearchStats {
     }
 
     pub fn update_match_count(&mut self, results: &[SearchResult], config: &Config) {
-        self.total_matches += count_actual_matches(results, config.ignore_case);
+        // Check if we're using regex patterns
+        let regex_indicators = [
+            '*', '+', '?', '.', '\\', '[', ']', '(', ')', '{', '}', '^', '$',
+        ];
+        let might_be_regex = config.query.chars().any(|c| regex_indicators.contains(&c));
+
+        if might_be_regex {
+            for result in results {
+                // Only count lines with actual matches, not context lines
+                if !result.get_matching_patterns().is_empty() {
+                    let pattern = &result.get_matching_patterns()[0];
+                    let line = result.get_line_content();
+
+                    // Try to compile the regex
+                    let regex_result = if config.ignore_case {
+                        regex::RegexBuilder::new(pattern)
+                            .case_insensitive(true)
+                            .build()
+                    } else {
+                        regex::Regex::new(pattern)
+                    };
+
+                    if let Ok(regex) = regex_result {
+                        // Count all regex matches in this line
+                        self.total_matches += regex.find_iter(line).count();
+                    }
+                }
+            }
+        } else {
+            // For regular patterns, use the existing count method
+            self.total_matches += count_actual_matches(results, config.ignore_case);
+        }
     }
 
     pub fn display(&self) {
