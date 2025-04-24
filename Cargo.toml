@@ -8,3 +8,5 @@ termcolor = "1.4.1"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
+assert_cmd = "2.0.17"
+regex = "1.11.1"
