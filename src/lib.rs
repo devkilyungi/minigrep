@@ -1,222 +1,63 @@
-use models::{Config, SearchResult};
-use std::{collections::HashSet, error, fs};
+pub mod config;
+mod core;
+mod models;
 
-pub mod models;
+use models::{Config, SearchStats};
+use std::{error, fs};
 
 pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
     let start_time = std::time::Instant::now();
-    let mut total_lines = 0;
-    let mut total_matches = 0;
-    let mut files_searched = 0;
+    let mut stats = SearchStats::init_stats(&config);
 
     let file_1 = fs::read_to_string(&config.file_path_1)?;
-    total_lines += file_1.lines().count();
-    files_searched += 1;
+    stats.total_lines += file_1.lines().count();
+    stats.files_searched += 1;
 
     let file_2 = if config.file_path_2.is_empty() {
         None
     } else {
         let content = fs::read_to_string(&config.file_path_2)?;
-        total_lines += content.lines().count();
-        files_searched += 1;
+        stats.total_lines += content.lines().count();
+        stats.files_searched += 1;
         Some(content)
     };
 
-    // Helper closure to print results for any file
-    let mut print_results = |file_label: &str, contents: &str| {
-        let search_results = search(
+    // Search and display file 1
+    let search_results_1 = core::search(
+        &config.query,
+        &file_1,
+        config.context_flag.as_str(),
+        Some(config.context_count as usize),
+        config.ignore_case,
+    );
+    stats.update_match_count(&search_results_1, &config);
+    core::display_results(&config.file_path_1, &search_results_1, config.ignore_case);
+
+    // If file 2 exists, search and display it too
+    if let Some(file_2_contents) = file_2 {
+        let search_results_2 = core::search(
             &config.query,
-            contents,
+            &file_2_contents,
             config.context_flag.as_str(),
             Some(config.context_count as usize),
             config.ignore_case,
         );
-
-        // Add to match count
-        let match_count = search_results
-            .iter()
-            .filter(|result| !result.get_matching_patterns().is_empty())
-            .flat_map(|result| {
-                let line = result.get_line_content();
-                result.get_matching_patterns().iter().map(move |pattern| {
-                    let mut count = 0;
-                    let mut start = 0;
-                    
-                    let pattern_lower = if config.ignore_case {
-                        pattern.to_lowercase()
-                    } else {
-                        pattern.clone()
-                    };
-                    
-                    let line_lower = if config.ignore_case {
-                        line.to_lowercase()
-                    } else {
-                        line.to_string()
-                    };
-
-                    while let Some(position) = line_lower[start..].find(&pattern_lower) {
-                        count += 1;
-                        start += position + pattern_lower.len();
-                        if start >= line_lower.len() {
-                            break;
-                        }
-                    }
-                    count
-                })
-            })
-            .sum::<usize>();
-
-        total_matches += match_count;
-
-        if search_results.is_empty() {
-            println!("{file_label}: No matches found.");
-        } else {
-            println!("Matches in {file_label}:");
-            for result in search_results {
-                result.display(config.ignore_case);
-            }
-        }
-    };
-
-    // Search file 1
-    print_results(&config.file_path_1, &file_1);
-
-    // If file 2 exists, search it too
-    if let Some(file_2_contents) = file_2 {
-        print_results(&config.file_path_2, &file_2_contents);
+        stats.update_match_count(&search_results_2, &config);
+        core::display_results(&config.file_path_2, &search_results_2, config.ignore_case);
     }
 
     // Print stats if requested
     if config.show_stats {
-        let duration = start_time.elapsed();
-        println!("\n--- Search Statistics ---");
-        println!("Pattern searched: '{}'", &config.query);
-        println!("Files searched: {}", files_searched);
-        println!("Total lines searched: {}", total_lines);
-        println!("Matches found: {}", total_matches);
-        println!("Search completed in: {:.2?}", duration);
-        println!("------------------------");
+        stats.duration = start_time.elapsed();
+        stats.display();
     }
 
     Ok(())
 }
 
-fn search(
-    query: &str,
-    contents: &str,
-    context: &str,
-    content_count: Option<usize>,
-    ignore_case: bool,
-) -> Vec<SearchResult> {
-    let lines: Vec<&str> = contents.lines().collect();
-    let mut line_numbers_to_include = HashSet::new();
-
-    // Split query into patterns by pipe character
-    let patterns = if query.contains('|') {
-        query
-            .split('|')
-            .map(|pattern| pattern.trim().to_string())
-            .collect::<Vec<String>>()
-    } else {
-        vec![query.to_string()]
-    };
-
-    // Convert patterns in query to lowercase if ignore_case is true
-    let patterns_to_use = if ignore_case {
-        patterns
-            .iter()
-            .map(|pattern| pattern.to_lowercase())
-            .collect::<Vec<String>>()
-    } else {
-        patterns
-    };
-
-    for (line_number, line_content) in lines.iter().enumerate() {
-        // Handle case sensitivity for the line content
-        let line_to_check = if ignore_case {
-            line_content.to_lowercase()
-        } else {
-            line_content.to_string()
-        };
-
-        // Check if the line contains any of the patterns
-        let contains_match = patterns_to_use
-            .iter()
-            .any(|pattern| line_to_check.contains(pattern));
-
-        if contains_match {
-            // Include the matched line number
-            line_numbers_to_include.insert(line_number);
-
-            // Handle context based on the flag
-            match context {
-                "before" => {
-                    if let Some(before_count) = content_count {
-                        let first_line = line_number.saturating_sub(before_count);
-                        for i in first_line..line_number {
-                            line_numbers_to_include.insert(i);
-                        }
-                    }
-                }
-                "after" => {
-                    if let Some(after_count) = content_count {
-                        let next_line = line_number + 1;
-                        let last_line = (line_number + after_count).min(lines.len() - 1);
-                        for i in next_line..=last_line {
-                            line_numbers_to_include.insert(i);
-                        }
-                    }
-                }
-                "context" => {
-                    if let Some(context_count) = content_count {
-                        let first_line = line_number.saturating_sub(context_count);
-                        let last_line = (line_number + context_count).min(lines.len() - 1);
-                        for i in first_line..=last_line {
-                            line_numbers_to_include.insert(i);
-                        }
-                    }
-                }
-                _ => {
-                    // Default case with no context
-                    // Matched line number already included
-                }
-            }
-        }
-    }
-
-    // Then collect the results in order
-    let mut results = Vec::new();
-    let mut line_numbers: Vec<usize> = line_numbers_to_include.into_iter().collect();
-    line_numbers.sort();
-
-    for &line_number in &line_numbers {
-        // Store the original matching patterns for this line to use in highlighting
-        let matching_patterns: Vec<String> = patterns_to_use
-            .iter()
-            .filter(|&pattern| {
-                if ignore_case {
-                    lines[line_number].to_lowercase().contains(pattern)
-                } else {
-                    lines[line_number].contains(pattern)
-                }
-            })
-            .cloned()
-            .collect();
-
-        results.push(SearchResult::new(
-            line_number,
-            lines[line_number].to_string(),
-            matching_patterns,
-        ));
-    }
-
-    results
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::models::{Config, ContextFlag};
+    use crate::{config::parse_args, core::search, models::ContextFlag};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -227,7 +68,7 @@ mod tests {
             String::from("file_path"),
         ];
 
-        let config = Config::build(&args).unwrap();
+        let config = parse_args(&args).unwrap();
 
         assert_eq!(config.query, "query");
         assert_eq!(config.file_path_1, "file_path");
@@ -251,7 +92,7 @@ mod tests {
         let results = search(query, contents, "", None, true);
 
         assert_eq!(results.len(), 1);
-        assert_eq!(results[0].get_line_number(), 2);
+        assert_eq!(results[0].get_line_number() + 1, 2);
         assert_eq!(results[0].get_line_content(), "Line 2");
     }
 
@@ -266,7 +107,7 @@ mod tests {
         println!("Results: {:#?}, length: {}", results, results.len());
 
         assert_eq!(results.len(), 1);
-        assert_eq!(results[0].get_line_number(), 2);
+        assert_eq!(results[0].get_line_number() + 1, 2);
         assert_eq!(results[0].get_line_content(), "line 2");
     }
 
@@ -283,9 +124,9 @@ mod tests {
         let mut results_sorted = results.clone();
         results_sorted.sort_by_key(|r| r.get_line_number());
 
-        assert_eq!(results_sorted[0].get_line_number(), 1);
-        assert_eq!(results_sorted[1].get_line_number(), 2);
-        assert_eq!(results_sorted[2].get_line_number(), 3);
+        assert_eq!(results_sorted[0].get_line_number() + 1, 1);
+        assert_eq!(results_sorted[1].get_line_number() + 1, 2);
+        assert_eq!(results_sorted[2].get_line_number() + 1, 3);
     }
 
     #[test]
@@ -300,9 +141,9 @@ mod tests {
         let mut results_sorted = results.clone();
         results_sorted.sort_by_key(|r| r.get_line_number());
 
-        assert_eq!(results_sorted[0].get_line_number(), 2);
-        assert_eq!(results_sorted[1].get_line_number(), 3);
-        assert_eq!(results_sorted[2].get_line_number(), 4);
+        assert_eq!(results_sorted[0].get_line_number() + 1, 2);
+        assert_eq!(results_sorted[1].get_line_number() + 1, 3);
+        assert_eq!(results_sorted[2].get_line_number() + 1, 4);
     }
 
     #[test]
@@ -317,9 +158,9 @@ mod tests {
         let mut results_sorted = results.clone();
         results_sorted.sort_by_key(|r| r.get_line_number());
 
-        assert_eq!(results_sorted[0].get_line_number(), 2); // Line 2
-        assert_eq!(results_sorted[1].get_line_number(), 3); // Line 3 (match)
-        assert_eq!(results_sorted[2].get_line_number(), 4); // Line 4
+        assert_eq!(results_sorted[0].get_line_number() + 1, 2); // Line 2
+        assert_eq!(results_sorted[1].get_line_number() + 1, 3); // Line 3 (match)
+        assert_eq!(results_sorted[2].get_line_number() + 1, 4); // Line 4
     }
 
     #[test]
@@ -334,8 +175,8 @@ mod tests {
         let mut results_sorted = results.clone();
         results_sorted.sort_by_key(|r| r.get_line_number());
 
-        assert_eq!(results_sorted[0].get_line_number(), 1); // Line 1 (match)
-        assert_eq!(results_sorted[1].get_line_number(), 2); // Line 2
+        assert_eq!(results_sorted[0].get_line_number() + 1, 1); // Line 1 (match)
+        assert_eq!(results_sorted[1].get_line_number() + 1, 2); // Line 2
     }
 
     #[test]
@@ -350,8 +191,8 @@ mod tests {
         let mut results_sorted = results.clone();
         results_sorted.sort_by_key(|r| r.get_line_number());
 
-        assert_eq!(results_sorted[0].get_line_number(), 2); // Line 2
-        assert_eq!(results_sorted[1].get_line_number(), 3); // Line 3 (match)
+        assert_eq!(results_sorted[0].get_line_number() + 1, 2); // Line 2
+        assert_eq!(results_sorted[1].get_line_number() + 1, 3); // Line 3 (match)
     }
 
     #[test]
@@ -380,11 +221,11 @@ mod tests {
         let mut results_sorted = results.clone();
         results_sorted.sort_by_key(|r| r.get_line_number());
 
-        assert_eq!(results_sorted[0].get_line_number(), 2); // Line 2
-        assert_eq!(results_sorted[1].get_line_number(), 3); // match 3
-        assert_eq!(results_sorted[2].get_line_number(), 4); // Line 4
-        assert_eq!(results_sorted[3].get_line_number(), 5); // match 5
-        assert_eq!(results_sorted[4].get_line_number(), 6); // Line 6
+        assert_eq!(results_sorted[0].get_line_number() + 1, 2); // Line 2
+        assert_eq!(results_sorted[1].get_line_number() + 1, 3); // match 3
+        assert_eq!(results_sorted[2].get_line_number() + 1, 4); // Line 4
+        assert_eq!(results_sorted[3].get_line_number() + 1, 5); // match 5
+        assert_eq!(results_sorted[4].get_line_number() + 1, 6); // Line 6
     }
 
     #[test]
@@ -401,12 +242,12 @@ mod tests {
         let mut results_sorted = results.clone();
         results_sorted.sort_by_key(|r| r.get_line_number());
 
-        assert_eq!(results_sorted[0].get_line_number(), 1); // Line 1
-        assert_eq!(results_sorted[1].get_line_number(), 2); // match 2
-        assert_eq!(results_sorted[2].get_line_number(), 3); // Line 3
-        assert_eq!(results_sorted[3].get_line_number(), 4); // Line 4
-        assert_eq!(results_sorted[4].get_line_number(), 5); // match 5
-        assert_eq!(results_sorted[5].get_line_number(), 6); // Line 6
+        assert_eq!(results_sorted[0].get_line_number() + 1, 1); // Line 1
+        assert_eq!(results_sorted[1].get_line_number() + 1, 2); // match 2
+        assert_eq!(results_sorted[2].get_line_number() + 1, 3); // Line 3
+        assert_eq!(results_sorted[3].get_line_number() + 1, 4); // Line 4
+        assert_eq!(results_sorted[4].get_line_number() + 1, 5); // match 5
+        assert_eq!(results_sorted[5].get_line_number() + 1, 6); // Line 6
     }
 
     #[test]

@@ -6,8 +6,8 @@ pub enum ConfigError {
     TooManyArguments,
     InvalidCaseFlag(String),
     InvalidContextFlag(String),
-    InvalidStatsFlag(String),
     InvalidContextCount(String),
+    InvalidArgument(String),
 }
 
 impl fmt::Display for ConfigError {
@@ -17,8 +17,8 @@ impl fmt::Display for ConfigError {
             ConfigError::TooManyArguments => write!(f, "Too many arguments"),
             ConfigError::InvalidCaseFlag(flag) => write!(f, "Invalid case flag: '{}'", flag),
             ConfigError::InvalidContextFlag(flag) => write!(f, "Invalid context flag: '{}'", flag),
-            ConfigError::InvalidStatsFlag(flag) => write!(f, "Invalid stats flag: '{}'", flag),
             ConfigError::InvalidContextCount(count) => write!(f, "Invalid context count: '{}'", count),
+            ConfigError::InvalidArgument(arg) => write!(f, "Invalid argument: '{}'", arg),
         }
     }
 }

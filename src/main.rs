@@ -1,10 +1,11 @@
-use minigrep::{self, models::Config};
 use std::{env, process};
+
+use minigrep::config;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let config = Config::build(&args).unwrap_or_else(|err| {
+    let config = config::parse_args(&args).unwrap_or_else(|err| {
         eprintln!("Problem parsing arguments: {err}");
         process::exit(1);
     });
