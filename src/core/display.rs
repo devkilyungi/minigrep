@@ -100,6 +100,7 @@ pub fn print_help() {
     println!("    --after N or --a N       Show N lines after each match");
     println!("    --context N or --c N     Show N lines before and after each match");
     println!("    --stats or --s           Display search statistics");
+    println!("    --recursive or --r       Recursively search through all files in a directory and its subdirectories");
     println!("    --help or -h             Display this help message");
     println!("    --version or -v          Display version information");
     println!();

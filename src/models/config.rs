@@ -48,4 +48,5 @@ pub struct Config {
     pub context_flag: ContextFlag,
     pub context_count: u8,
     pub show_stats: bool,
+    pub recursive: bool,
 }

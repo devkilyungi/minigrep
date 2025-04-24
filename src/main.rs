@@ -19,6 +19,7 @@ fn main() {
 
     if let Err(e) = minigrep::run(config) {
         eprintln!("Application error: {e}");
+        println!("\nTo see available options, use --help or -h");
         process::exit(1);
     }
 }

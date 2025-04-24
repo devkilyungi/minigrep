@@ -8,6 +8,7 @@ pub enum ConfigError {
     InvalidContextFlag(String),
     InvalidContextCount(String),
     InvalidArgument(String),
+    NotADirectory(String),
 }
 
 impl fmt::Display for ConfigError {
@@ -19,6 +20,7 @@ impl fmt::Display for ConfigError {
             ConfigError::InvalidContextFlag(flag) => write!(f, "Invalid context flag: '{}'", flag),
             ConfigError::InvalidContextCount(count) => write!(f, "Invalid context count: '{}'", count),
             ConfigError::InvalidArgument(arg) => write!(f, "Invalid argument: '{}'", arg),
+            ConfigError::NotADirectory(path) => write!(f, "Path provided is not a directory: '{}'", path),
         }
     }
 }

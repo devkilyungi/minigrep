@@ -1,6 +1,7 @@
 pub mod config;
 pub mod core;
 mod models;
+mod utils;
 
 use models::{Config, SearchStats};
 use std::{error, fs};
@@ -9,41 +10,69 @@ pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
     let start_time = std::time::Instant::now();
     let mut stats = SearchStats::init_stats(&config);
 
-    let file_1 = fs::read_to_string(&config.file_path_1)?;
-    stats.total_lines += file_1.lines().count();
-    stats.files_searched += 1;
+    // If recursive flag is set, get all files from directory
+    if config.recursive {
+        let files = utils::get_all_files_in_directory(&config.file_path_1)?;
+        stats.files_searched = files.len();
 
-    let file_2 = if config.file_path_2.is_empty() {
-        None
+        for file_path in files {
+            if let Ok(contents) = fs::read_to_string(&file_path) {
+                stats.total_lines += contents.lines().count();
+
+                let search_results = core::search(
+                    &config.query,
+                    &contents,
+                    config.context_flag.as_str(),
+                    Some(config.context_count as usize),
+                    config.ignore_case,
+                );
+
+                stats.update_match_count(&search_results, &config);
+
+                if !search_results.is_empty() {
+                    if let Some(path_str) = file_path.to_str() {
+                        core::display_results(path_str, &search_results, config.ignore_case);
+                    }
+                }
+            }
+        }
     } else {
-        let content = fs::read_to_string(&config.file_path_2)?;
-        stats.total_lines += content.lines().count();
+        let file_1 = fs::read_to_string(&config.file_path_1)?;
+        stats.total_lines += file_1.lines().count();
         stats.files_searched += 1;
-        Some(content)
-    };
 
-    // Search and display file 1
-    let search_results_1 = core::search(
-        &config.query,
-        &file_1,
-        config.context_flag.as_str(),
-        Some(config.context_count as usize),
-        config.ignore_case,
-    );
-    stats.update_match_count(&search_results_1, &config);
-    core::display_results(&config.file_path_1, &search_results_1, config.ignore_case);
+        let file_2 = if config.file_path_2.is_empty() {
+            None
+        } else {
+            let content = fs::read_to_string(&config.file_path_2)?;
+            stats.total_lines += content.lines().count();
+            stats.files_searched += 1;
+            Some(content)
+        };
 
-    // If file 2 exists, search and display it too
-    if let Some(file_2_contents) = file_2 {
-        let search_results_2 = core::search(
+        // Search and display file 1
+        let search_results_1 = core::search(
             &config.query,
-            &file_2_contents,
+            &file_1,
             config.context_flag.as_str(),
             Some(config.context_count as usize),
             config.ignore_case,
         );
-        stats.update_match_count(&search_results_2, &config);
-        core::display_results(&config.file_path_2, &search_results_2, config.ignore_case);
+        stats.update_match_count(&search_results_1, &config);
+        core::display_results(&config.file_path_1, &search_results_1, config.ignore_case);
+
+        // If file 2 exists, search and display it too
+        if let Some(file_2_contents) = file_2 {
+            let search_results_2 = core::search(
+                &config.query,
+                &file_2_contents,
+                config.context_flag.as_str(),
+                Some(config.context_count as usize),
+                config.ignore_case,
+            );
+            stats.update_match_count(&search_results_2, &config);
+            core::display_results(&config.file_path_2, &search_results_2, config.ignore_case);
+        }
     }
 
     // Print stats if requested

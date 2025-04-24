@@ -11,6 +11,9 @@ A command-line tool for searching text patterns in files, inspired by the Unix `
 - Pattern matching with multiple terms using pipe separator (|)
 - Search statistics output
 - Configurable via command-line flags or environment variables
+- Recursive directory search for searching through all files in a directory and its subdirectories
+
+**Note:** The recursive search feature currently supports searching through a single directory at a time. Multiple directory recursive search is not yet implemented.
 
 ## Installation
 
@@ -95,6 +98,26 @@ Combine multiple options:
 minigrep to poem.txt sunrise.txt -ic --context 2 --stats
 ```
 
+Recursively search through a directory:
+```bash
+minigrep pattern directory/ --recursive
+```
+
+Recursively search with case-insensitivity:
+```bash
+bashminigrep pattern directory/ --recursive -ic
+```
+
+Combine recursive search with statistics:
+```bash
+bashminigrep pattern directory/ --recursive --stats
+```
+
+Combine recursive search with stats and case-insensitivity:
+```bash
+bashminigrep pattern directory/ --recursive --stats -ic
+```
+
 ### Options
 
 - `-ic`: Ignore case when searching
@@ -103,6 +126,7 @@ minigrep to poem.txt sunrise.txt -ic --context 2 --stats
 - `--after N or --a N`: Show N lines after each match
 - `--context N or --c N`: Show N lines before and after each match
 - `--stats or --s`: Display search statistics (pattern, files searched, matches found, etc.)
+- `--recursive or --r`: Recursively search through all files in a directory and its subdirectories
 
 ### Environment Variables
 
