@@ -86,3 +86,29 @@ fn display_search_result(search_result: &SearchResult, ignore_case: bool) {
     let _ = write!(&mut stdout, "{}", remaining);
     println!();
 }
+
+pub fn print_help() {
+    println!("minigrep - Search for patterns in files");
+    println!();
+    println!("USAGE:");
+    println!("    minigrep PATTERN FILENAME [SECOND_FILENAME] [OPTIONS]");
+    println!();
+    println!("OPTIONS:");
+    println!("    -ic                      Ignore case when searching");
+    println!("    -cs                      Force case-sensitive search");
+    println!("    --before N or --b N      Show N lines before each match");
+    println!("    --after N or --a N       Show N lines after each match");
+    println!("    --context N or --c N     Show N lines before and after each match");
+    println!("    --stats or --s           Display search statistics");
+    println!("    --help or -h             Display this help message");
+    println!();
+    println!("EXAMPLES:");
+    println!("    minigrep to poem.txt                   Search for 'to' in poem.txt");
+    println!("    minigrep to poem.txt -ic               Case-insensitive search");
+    println!("    minigrep to poem.txt sunrise.txt       Search in multiple files");
+    println!("    minigrep \"sun|moon\" sunrise.txt        Search for multiple patterns");
+    println!("    minigrep to poem.txt --context 2       Show context around matches");
+    println!();
+    println!("ENVIRONMENT:");
+    println!("    IGNORE_CASE             Set to any value to enable case-insensitive search by default");
+}

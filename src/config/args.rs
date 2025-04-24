@@ -1,7 +1,15 @@
-use crate::models::{Config, ConfigError, ContextFlag};
+use crate::{
+    core,
+    models::{Config, ConfigError, ContextFlag},
+};
 use std::env;
 
 pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
+    if args.len() > 1 && (args[1] == "--help" || args[1] == "-h") {
+        core::print_help();
+        std::process::exit(0);
+    }
+
     if args.len() < 3 {
         return Err(ConfigError::NotEnoughArguments);
     }
@@ -30,10 +38,10 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
                 // it's a context flag
                 context_count = 1;
                 context_flag = match fourth.as_str() {
-                    "--before" => ContextFlag::Before,
-                    "--after" => ContextFlag::After,
-                    "--context" => ContextFlag::Context,
-                    "--stats" => {
+                    "--before" | "--b" => ContextFlag::Before,
+                    "--after" | "--a" => ContextFlag::After,
+                    "--context" | "--c" => ContextFlag::Context,
+                    "--stats" | "--s" => {
                         show_stats = true;
                         ContextFlag::Stats
                     }
@@ -65,10 +73,10 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
                 file_path_2 = fourth;
                 context_count = 1;
                 context_flag = match fifth.as_str() {
-                    "--before" => ContextFlag::Before,
-                    "--after" => ContextFlag::After,
-                    "--context" => ContextFlag::Context,
-                    "--stats" => {
+                    "--before" | "--b" => ContextFlag::Before,
+                    "--after" | "--a" => ContextFlag::After,
+                    "--context" | "--c" => ContextFlag::Context,
+                    "--stats" | "--s" => {
                         show_stats = true;
                         ContextFlag::Stats
                     }
@@ -86,10 +94,10 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
             } else {
                 // it's a context count
                 context_flag = match fourth.as_str() {
-                    "--before" => ContextFlag::Before,
-                    "--after" => ContextFlag::After,
-                    "--context" => ContextFlag::Context,
-                    "--stats" => {
+                    "--before" | "--b" => ContextFlag::Before,
+                    "--after" | "--a" => ContextFlag::After,
+                    "--context" | "--c" => ContextFlag::Context,
+                    "--stats" | "--s" => {
                         show_stats = true;
                         ContextFlag::Stats
                     }
@@ -133,10 +141,10 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
                 };
             } else {
                 context_flag = match fifth.as_str() {
-                    "--before" => ContextFlag::Before,
-                    "--after" => ContextFlag::After,
-                    "--context" => ContextFlag::Context,
-                    "--stats" => {
+                    "--before" | "--b" => ContextFlag::Before,
+                    "--after" | "--a" => ContextFlag::After,
+                    "--context" | "--c" => ContextFlag::Context,
+                    "--stats" | "--s" => {
                         show_stats = true;
                         ContextFlag::Stats
                     }
@@ -146,10 +154,10 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
 
             if sixth.starts_with("--") {
                 context_flag = match sixth.as_str() {
-                    "--before" => ContextFlag::Before,
-                    "--after" => ContextFlag::After,
-                    "--context" => ContextFlag::Context,
-                    "--stats" => {
+                    "--before" | "--b" => ContextFlag::Before,
+                    "--after" | "--a" => ContextFlag::After,
+                    "--context" | "--c" => ContextFlag::Context,
+                    "--stats" | "--s" => {
                         show_stats = true;
                         ContextFlag::Stats
                     }
@@ -186,10 +194,10 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
                 context_flag = ContextFlag::Stats;
             } else {
                 context_flag = match sixth.as_str() {
-                    "--before" => ContextFlag::Before,
-                    "--after" => ContextFlag::After,
-                    "--context" => ContextFlag::Context,
-                    "--stats" => {
+                    "--before" | "--b" => ContextFlag::Before,
+                    "--after" | "--a" => ContextFlag::After,
+                    "--context" | "--c" => ContextFlag::Context,
+                    "--stats" | "--s" => {
                         show_stats = true;
                         ContextFlag::Stats
                     }
@@ -225,9 +233,9 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
 
             // Handle context flag
             context_flag = match sixth.as_str() {
-                "--before" => ContextFlag::Before,
-                "--after" => ContextFlag::After,
-                "--context" => ContextFlag::Context,
+                "--before" | "--b" => ContextFlag::Before,
+                "--after" | "--a" => ContextFlag::After,
+                "--context" | "--c" => ContextFlag::Context,
                 _ => return Err(ConfigError::InvalidContextFlag(sixth)),
             };
 
@@ -238,7 +246,7 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
             };
 
             // Handle stats flag
-            if eighth == "--stats" {
+            if eighth == "--stats" || eighth == "--s" {
                 show_stats = true;
             } else {
                 return Err(ConfigError::InvalidArgument(eighth));

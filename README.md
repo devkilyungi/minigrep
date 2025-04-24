@@ -32,6 +32,14 @@ Basic usage:
 minigrep PATTERN FILENAME [SECOND_FILENAME] [OPTIONS]
 ```
 
+### Help and Usage Information
+
+Get help with:
+```bash
+minigrep --help
+# or
+minigrep -h
+
 ### Examples
 
 Search for "to" in poem.txt (case-sensitive):
@@ -83,10 +91,10 @@ minigrep to poem.txt sunrise.txt -ic --context 2 --stats
 
 - `-ic`: Ignore case when searching
 - `-cs`: Force case-sensitive search
-- `--before N`: Show N lines before each match
-- `--after N`: Show N lines after each match
-- `--context N`: Show N lines before and after each match
-- `--stats`: Display search statistics (pattern, files searched, matches found, etc.)
+- `--before N or --b N`: Show N lines before each match
+- `--after N or --a N`: Show N lines after each match
+- `--context N or --c N`: Show N lines before and after each match
+- `--stats or --s`: Display search statistics (pattern, files searched, matches found, etc.)
 
 ### Environment Variables
 

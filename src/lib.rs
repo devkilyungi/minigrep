@@ -1,5 +1,5 @@
 pub mod config;
-mod core;
+pub mod core;
 mod models;
 
 use models::{Config, SearchStats};
