@@ -16,6 +16,17 @@ A command-line tool for searching text patterns in files, inspired by the Unix `
 
 **Note:** The recursive search feature currently supports searching through a single directory at a time. Multiple directory recursive search is not yet implemented.
 
+## Performance Considerations
+
+- Regular expressions are automatically detected but are more resource-intensive than literal searches
+- For large files or directories, consider using literal patterns when possible
+- The recursive search is depth-first and may use significant memory for deeply nested directories
+
+## Exit Codes
+
+- 0: Successful execution (regardless of whether matches were found)
+- 1: Error occurred (invalid arguments, file not found, etc.)
+
 ## Installation
 
 Clone the repository and build with Cargo:
