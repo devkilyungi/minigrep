@@ -10,6 +10,21 @@ pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
     let start_time = std::time::Instant::now();
     let mut stats = SearchStats::init_stats(&config);
 
+    // Check file existence upfront
+    if !config.recursive && !std::path::Path::new(&config.file_path_1).exists() {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("File not found: {}", config.file_path_1),
+        )));
+    }
+
+    if !config.file_path_2.is_empty() && !std::path::Path::new(&config.file_path_2).exists() {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("File not found: {}", config.file_path_2),
+        )));
+    }
+
     // If recursive flag is set, get all files from directory
     if config.recursive {
         let files = utils::get_all_files_in_directory(&config.file_path_1)?;
@@ -341,65 +356,63 @@ mod tests {
         // Should include lines 0 and 1 without duplicates
         assert_eq!(results.len(), 2);
     }
-    
+
     #[test]
     fn test_search_with_regex() {
-        let query = "Line \\d";  // Regex pattern matching "Line" followed by a digit
+        let query = "Line \\d"; // Regex pattern matching "Line" followed by a digit
         let contents = "Line 1\nLine 2\nLine 3\nNo match";
-        
+
         let results = search(query, contents, "", None, true).unwrap();
-        
+
         assert_eq!(results.len(), 3);
-        let line_numbers: Vec<usize> = results.iter()
-            .map(|r| r.get_line_number())
-            .collect();
+        let line_numbers: Vec<usize> = results.iter().map(|r| r.get_line_number()).collect();
         assert!(line_numbers.contains(&0)); // Line 1
         assert!(line_numbers.contains(&1)); // Line 2
         assert!(line_numbers.contains(&2)); // Line 3
     }
-    
+
     #[test]
     fn test_regex_case_sensitivity() {
         let query = "[Ll]ine \\d";
         let contents = "Line 1\nline 2\nLINE 3";
-        
+
         // Case-sensitive search should match only the first line
         let results_sensitive = search(query, contents, "", None, false).unwrap();
         assert_eq!(results_sensitive.len(), 2);
-        
+
         // Case-insensitive search should match all three lines
         let results_insensitive = search(query, contents, "", None, true).unwrap();
         assert_eq!(results_insensitive.len(), 3);
     }
-    
+
     #[test]
     fn test_invalid_regex() {
         let query = "Line ["; // Invalid regex pattern (unclosed character class)
         let contents = "Line 1\nLine 2";
-        
+
         let result = search(query, contents, "", None, true);
         assert!(result.is_err());
     }
-    
+
     #[test]
     fn test_regex_with_context() {
         let query = "Line \\d";
         let contents = "Header\nLine 1\nMiddle\nLine 3\nFooter";
         let context_flag = ContextFlag::Context.as_str();
-        
+
         let results = search(query, contents, context_flag, Some(1), true).unwrap();
-        
+
         // Should include: Header, Line 1, Middle, Line 3, Footer (all 5 lines)
         assert_eq!(results.len(), 5);
     }
-    
+
     #[test]
     fn test_pipe_chars_in_regex() {
         let query = "Line|Header";
         let contents = "Header\nLine 1\nMiddle\nLine 3\nFooter";
-        
+
         let results = search(query, contents, "", None, true).unwrap();
-        
+
         // Should match lines with "Line" or "Header"
         assert_eq!(results.len(), 3);
     }
