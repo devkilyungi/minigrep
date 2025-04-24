@@ -9,6 +9,11 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
         core::print_help();
         std::process::exit(0);
     }
+    
+    if args.len() > 1 && (args[1] == "--version" || args[1] == "-v") {
+        println!("minigrep {}", env!("CARGO_PKG_VERSION"));
+        std::process::exit(0);
+    }
 
     if args.len() < 3 {
         return Err(ConfigError::NotEnoughArguments);

@@ -101,6 +101,7 @@ pub fn print_help() {
     println!("    --context N or --c N     Show N lines before and after each match");
     println!("    --stats or --s           Display search statistics");
     println!("    --help or -h             Display this help message");
+    println!("    --version or -v          Display version information");
     println!();
     println!("EXAMPLES:");
     println!("    minigrep to poem.txt                   Search for 'to' in poem.txt");

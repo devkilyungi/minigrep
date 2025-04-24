@@ -39,6 +39,14 @@ Get help with:
 minigrep --help
 # or
 minigrep -h
+```
+
+Check version with:
+```
+minigrep --version
+# or
+minigrep -v
+```
 
 ### Examples
 
