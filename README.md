@@ -5,6 +5,7 @@ A command-line tool for searching text patterns in files, inspired by the Unix `
 ## Features
 
 - Search for text patterns in files with highlighted matches
+- Support for regex patterns automatically in text pattern
 - Support for case-sensitive and case-insensitive searches
 - Multiple file search capability
 - Context display options (before, after, or both)
@@ -117,6 +118,16 @@ Combine recursive search with stats and case-insensitivity:
 ```bash
 bashminigrep pattern directory/ --recursive --stats -ic
 ```
+
+```bash
+# Find all words starting with 'w'
+minigrep "\bw\w+" poem.txt
+
+# Match any character between 's' and 'n'
+minigrep "s.n" sunrise.txt
+
+# Find words ending in 'ing'
+minigrep "\w+ing\b" poem.txt -ic
 
 ### Options
 
