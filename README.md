@@ -119,15 +119,25 @@ Combine recursive search with stats and case-insensitivity:
 bashminigrep pattern directory/ --recursive --stats -ic
 ```
 
+Find all words starting with 'w'
 ```bash
-# Find all words starting with 'w'
 minigrep "\bw\w+" poem.txt
+```
 
-# Match any character between 's' and 'n'
+Match any character between 's' and 'n'
+```bash
 minigrep "s.n" sunrise.txt
+```
 
-# Find words ending in 'ing'
+Find words ending in 'ing'
+```bash
 minigrep "\w+ing\b" poem.txt -ic
+```
+
+Find all words starting with 't' recursively in a directory
+```bash
+minigrep "\bt\w+" my_directory/ --recursive
+```
 
 ### Options
 
