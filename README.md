@@ -14,7 +14,9 @@ A command-line tool for searching text patterns in files, inspired by the Unix `
 - Configurable via command-line flags or environment variables
 - Recursive directory search for searching through all files in a directory and its subdirectories
 
+```bash
 **Note:** The recursive search feature currently supports searching through a single directory at a time. Multiple directory recursive search is not yet implemented.
+```
 
 ## Performance Considerations
 
