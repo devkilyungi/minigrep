@@ -19,8 +19,11 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
         return Err(ConfigError::NotEnoughArguments);
     }
 
+    // Core arguments
     let query = args[1].clone();
     let file_path_1 = args[2].clone();
+
+    // Default values
     let mut file_path_2 = "".to_string();
     let mut ignore_case = env::var("IGNORE_CASE").is_ok();
     let mut context_flag = ContextFlag::After;
@@ -28,354 +31,101 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
     let mut show_stats = false;
     let mut recursive = false;
 
-    match args.len() {
-        3 => {
-            // Format: [binary, query, file_path_1]
-            // Example: minigrep "pattern" file.txt
-            // ignore_case defaults to env var setting
+    // Process remaining arguments
+    // Supported formats:
+    // 1. minigrep <query> <file>
+    // 2. minigrep <query> <file> -ic/--cs (case options)
+    // 3. minigrep <query> <file> --stats/--s (statistics)
+    // 4. minigrep <query> <file> --context/--c/--before/--b/--after/--a [count]
+    // 5. minigrep <query> <directory> --recursive/--r (recursive search)
+    // 6. minigrep <query> <file1> <file2> (multiple files)
+    //
+    // All these options can be combined in any order after the query and first file
+
+    for i in 3..args.len() {
+        let arg = &args[i];
+
+        // Handle case sensitivity flags
+        if arg == "-ic" {
+            ignore_case = true;
+            continue;
+        } else if arg == "-cs" {
+            ignore_case = false;
+            continue;
         }
-        4 => {
-            // Format: [binary, query, file_path_1/directory, option]
-            // Options can be:
-            // 1. Context flag: --before, --after, --context, --stats
-            // 2. Recursive flag: --recursive, --r
-            // 3. Case sensitivity flag: -ic, -cs
-            // 4. Second file path
-            // Examples:
-            // minigrep "pattern" file.txt --context
-            // minigrep "pattern" dir/ --recursive
-            // minigrep "pattern" file.txt -ic
-            // minigrep "pattern" file1.txt file2.txt
 
-            let fourth = args[3].clone();
-
-            if fourth.starts_with("--") {
-                if fourth == "--recursive" || fourth == "--r" {
-                    recursive = true;
-                } else {
-                    // it's a context flag
-                    context_count = 1;
-                    context_flag = match fourth.as_str() {
-                        "--before" | "--b" => ContextFlag::Before,
-                        "--after" | "--a" => ContextFlag::After,
-                        "--context" | "--c" => ContextFlag::Context,
-                        "--stats" | "--s" => {
-                            show_stats = true;
-                            ContextFlag::Stats
-                        }
-                        _ => return Err(ConfigError::InvalidContextFlag(fourth)),
-                    };
-                }
-            } else if fourth.starts_with('-') {
-                // it's a flag
-                ignore_case = match fourth.as_str() {
-                    "-ic" => true,
-                    "-cs" => false,
-                    // ignore_case already set from env
-                    _ => return Err(ConfigError::InvalidCaseFlag(fourth)),
-                };
-            } else {
-                // it's a second file
-                file_path_2 = fourth;
-            }
+        // Handle stats flag
+        if arg == "--stats" || arg == "--s" {
+            show_stats = true;
+            continue;
         }
-        5 => {
-            // Format: [binary, query, file_path_1/directory, option1, option2]
-            // Common combinations:
-            // 1. [query, dir, --recursive, --stats/--ic/-cs]
-            // 2. [query, file1, file2, --context/--stats/-ic/-cs]
-            // 3. [query, file, --context/--before/--after, context_count]
-            // Examples:
-            // minigrep "pattern" dir/ --recursive --stats
-            // minigrep "pattern" file1.txt file2.txt -ic
-            // minigrep "pattern" file.txt --context 2
 
-            let fourth = args[3].clone();
-            let fifth = args[4].clone();
-
-            if fifth.starts_with("--") {
-                if fourth == "--recursive" || fourth == "--r" {
-                    recursive = true;
-                    // it's a stats flag
-                    context_flag = match fifth.as_str() {
-                        "--stats" | "--s" => {
-                            show_stats = true;
-                            ContextFlag::Stats
-                        }
-                        _ => return Err(ConfigError::InvalidContextFlag(fifth)),
-                    };
-                } else {
-                    file_path_2 = fourth;
-                    // it's a context flag
-                    context_count = 1;
-                    context_flag = match fifth.as_str() {
-                        "--before" | "--b" => ContextFlag::Before,
-                        "--after" | "--a" => ContextFlag::After,
-                        "--context" | "--c" => ContextFlag::Context,
-                        "--stats" | "--s" => {
-                            show_stats = true;
-                            ContextFlag::Stats
-                        }
-                        _ => return Err(ConfigError::InvalidContextFlag(fifth)),
-                    };
-                }
-            } else if fifth.starts_with('-') {
-                if fourth == "--recursive" || fourth == "--r" {
-                    recursive = true;
-                } else {
-                    file_path_2 = fourth;
-                }
-                // it's a flag
-                ignore_case = match fifth.as_str() {
-                    "-ic" => true,
-                    "-cs" => false,
-                    // ignore_case already set from env
-                    _ => return Err(ConfigError::InvalidCaseFlag(fifth)),
-                };
-            } else {
-                // it's a context count
-                context_flag = match fourth.as_str() {
-                    "--before" | "--b" => ContextFlag::Before,
-                    "--after" | "--a" => ContextFlag::After,
-                    "--context" | "--c" => ContextFlag::Context,
-                    "--stats" | "--s" => {
-                        show_stats = true;
-                        ContextFlag::Stats
-                    }
-                    _ => return Err(ConfigError::InvalidContextFlag(fifth)),
-                };
-                context_count = match fifth.parse() {
-                    Ok(count) => count,
-                    Err(_) => return Err(ConfigError::InvalidContextCount(fifth)),
-                };
-            }
+        // Handle recursive flag
+        if arg == "--recursive" || arg == "--r" {
+            recursive = true;
+            continue;
         }
-        6 => {
-            // Format: [binary, query, file_path_1/directory, option1, option2, option3]
-            // Common combinations:
-            // 1. [query, dir, --recursive, -ic/-cs, --stats]
-            // 2. [query, dir, --recursive, --context/--before/--after, context_count]
-            // 3. [query, file1, file2, -ic/-cs, --context/--before/--after]
-            // 4. [query, file, -ic/-cs, --context/--before/--after, context_count]
-            // Examples:
-            // minigrep "pattern" dir/ --recursive -ic --stats
-            // minigrep "pattern" dir/ --recursive --context 2
-            // minigrep "pattern" file1.txt file2.txt -ic --context
 
-            let fourth = args[3].clone();
-            let fifth = args[4].clone();
-            let sixth = args[5].clone();
-
-            if fourth == "--recursive" || fourth == "--r" {
-                recursive = true;
-
-                // Fifth arg could be case sensitivity or context flag
-                if fifth.starts_with('-') {
-                    if fifth == "-ic" {
-                        ignore_case = true;
-                    } else if fifth == "-cs" {
-                        ignore_case = false;
-                    } else if fifth.starts_with("--") {
-                        // It's a context flag
-                        context_count = 1;
-                        context_flag = match fifth.as_str() {
-                            "--before" | "--b" => ContextFlag::Before,
-                            "--after" | "--a" => ContextFlag::After,
-                            "--context" | "--c" => ContextFlag::Context,
-                            "--stats" | "--s" => {
-                                show_stats = true;
-                                ContextFlag::Stats
-                            }
-                            _ => return Err(ConfigError::InvalidContextFlag(fifth)),
-                        };
-                    } else {
-                        return Err(ConfigError::InvalidArgument(fifth));
-                    }
-                } else {
-                    return Err(ConfigError::InvalidArgument(fifth));
-                }
-
-                // Sixth arg could be stats, context count, or case sensitivity
-                if sixth.starts_with("--") {
-                    if sixth == "--stats" || sixth == "--s" {
-                        show_stats = true;
-                    } else {
-                        return Err(ConfigError::InvalidArgument(sixth));
-                    }
-                } else if sixth.starts_with("-") {
-                    if sixth == "-ic" {
-                        ignore_case = true;
-                    } else if sixth == "-cs" {
-                        ignore_case = false;
-                    } else {
-                        return Err(ConfigError::InvalidArgument(sixth));
-                    }
-                } else {
-                    // Could be a context count if fifth was a context flag
-                    if fifth.starts_with("--") && fifth != "--stats" && fifth != "--s" {
-                        context_count = match sixth.parse() {
-                            Ok(count) => count,
-                            Err(_) => return Err(ConfigError::InvalidContextCount(sixth)),
-                        };
-                    } else {
-                        return Err(ConfigError::InvalidArgument(sixth));
-                    }
-                }
-            } else {
-                // Not recursive, handle original cases
-                if fourth.starts_with('-') {
-                    // it's a flag
-                    ignore_case = match fourth.as_str() {
-                        "-ic" => true,
-                        "-cs" => false,
-                        // ignore_case already set from env
-                        _ => return Err(ConfigError::InvalidCaseFlag(fourth)),
-                    };
-                } else {
-                    // it's file path 2
-                    file_path_2 = fourth;
-                }
-
-                if fifth.starts_with('-') {
-                    if fifth.starts_with("--") {
-                        // It's a context flag
-                        context_flag = match fifth.as_str() {
-                            "--before" | "--b" => ContextFlag::Before,
-                            "--after" | "--a" => ContextFlag::After,
-                            "--context" | "--c" => ContextFlag::Context,
-                            "--stats" | "--s" => {
-                                show_stats = true;
-                                ContextFlag::Stats
-                            }
-                            _ => return Err(ConfigError::InvalidContextFlag(fifth)),
-                        };
-                    } else {
-                        // it's a case sensitivity flag
-                        ignore_case = match fifth.as_str() {
-                            "-ic" => true,
-                            "-cs" => false,
-                            // ignore_case already set from env
-                            _ => return Err(ConfigError::InvalidCaseFlag(fifth)),
-                        };
-                    }
-                } else {
-                    // It could be a context flag name without --
-                    context_flag = match fifth.as_str() {
-                        "before" | "b" => ContextFlag::Before,
-                        "after" | "a" => ContextFlag::After,
-                        "context" | "c" => ContextFlag::Context,
-                        _ => return Err(ConfigError::InvalidContextFlag(fifth)),
-                    };
-                }
-
-                if sixth.starts_with("--") {
-                    // It's a stats flag
-                    show_stats = match sixth.as_str() {
-                        "--stats" | "--s" => true,
-                        _ => return Err(ConfigError::InvalidContextFlag(sixth)),
-                    };
-                } else {
-                    // Could be a context count
-                    context_count = match sixth.parse() {
-                        Ok(count) => count,
-                        Err(_) => return Err(ConfigError::InvalidContextCount(sixth)),
-                    };
+        // Handle context flags
+        if arg == "--before" || arg == "--b" {
+            context_flag = ContextFlag::Before;
+            // Look for context count in next argument
+            if i + 1 < args.len() {
+                if let Ok(count) = args[i + 1].parse::<u8>() {
+                    context_count = count;
+                    // Skip the next argument since we consumed it
+                    continue;
                 }
             }
-        }
-        7 => {
-            // Format: [binary, query, file_path_1, file_path_2, case_flag, context_flag, context_count]
-            // Examples:
-            // minigrep "pattern" file1.txt file2.txt -ic --context 2
-            // minigrep "pattern" file1.txt file2.txt -cs --before 3
-
-            let fourth = args[3].clone();
-            let fifth = args[4].clone();
-            let sixth = args[5].clone();
-            let seventh = args[6].clone();
-
-            file_path_2 = fourth;
-
-            // Handle case sensitivity flag
-            ignore_case = match fifth.as_str() {
-                "-ic" => true,
-                "-cs" => false,
-                // ignore_case already set from env
-                _ => return Err(ConfigError::InvalidCaseFlag(fifth)),
-            };
-
-            // Handle context flag and stats
-            if sixth == "--stats" {
-                show_stats = true;
-                context_flag = ContextFlag::Stats;
-            } else {
-                context_flag = match sixth.as_str() {
-                    "--before" | "--b" => ContextFlag::Before,
-                    "--after" | "--a" => ContextFlag::After,
-                    "--context" | "--c" => ContextFlag::Context,
-                    "--stats" | "--s" => {
-                        show_stats = true;
-                        ContextFlag::Stats
-                    }
-                    _ => return Err(ConfigError::InvalidContextFlag(sixth)),
-                };
+            context_count = 1; // Default count if not specified
+            continue;
+        } else if arg == "--after" || arg == "--a" {
+            context_flag = ContextFlag::After;
+            if i + 1 < args.len() {
+                if let Ok(count) = args[i + 1].parse::<u8>() {
+                    context_count = count;
+                    continue;
+                }
             }
-
-            // Handle context count (if not stats)
-            if !show_stats || context_flag != ContextFlag::Stats {
-                context_count = match seventh.parse() {
-                    Ok(count) => count,
-                    Err(_) => return Err(ConfigError::InvalidContextCount(seventh)),
-                };
+            context_count = 1;
+            continue;
+        } else if arg == "--context" || arg == "--c" {
+            context_flag = ContextFlag::Context;
+            if i + 1 < args.len() {
+                if let Ok(count) = args[i + 1].parse::<u8>() {
+                    context_count = count;
+                    continue;
+                }
             }
+            context_count = 1;
+            continue;
         }
-        8 => {
-            // Format: [binary, query, file_path_1, file_path_2, case_flag, context_flag, context_count, --stats]
-            // Example:
-            // minigrep "pattern" file1.txt file2.txt -ic --context 2 --stats
 
-            let fourth = args[3].clone();
-            let fifth = args[4].clone();
-            let sixth = args[5].clone();
-            let seventh = args[6].clone();
-            let eighth = args[7].clone();
-
-            file_path_2 = fourth;
-
-            // Handle case sensitivity flag
-            ignore_case = match fifth.as_str() {
-                "-ic" => true,
-                "-cs" => false,
-                // ignore_case already set from env
-                _ => return Err(ConfigError::InvalidCaseFlag(fifth)),
-            };
-
-            // Handle context flag
-            context_flag = match sixth.as_str() {
-                "--before" | "--b" => ContextFlag::Before,
-                "--after" | "--a" => ContextFlag::After,
-                "--context" | "--c" => ContextFlag::Context,
-                _ => return Err(ConfigError::InvalidContextFlag(sixth)),
-            };
-
-            // Handle context count
-            context_count = match seventh.parse() {
-                Ok(count) => count,
-                Err(_) => return Err(ConfigError::InvalidContextCount(seventh)),
-            };
-
-            // Handle stats flag
-            if eighth == "--stats" || eighth == "--s" {
-                show_stats = true;
-            } else {
-                return Err(ConfigError::InvalidArgument(eighth));
-            }
+        // If it's a number following a context flag, we've already handled it
+        if arg.parse::<u8>().is_ok()
+            && i > 3
+            && (args[i - 1] == "--before"
+                || args[i - 1] == "--b"
+                || args[i - 1] == "--after"
+                || args[i - 1] == "--a"
+                || args[i - 1] == "--context"
+                || args[i - 1] == "--c")
+        {
+            continue;
         }
-        _ => return Err(ConfigError::TooManyArguments),
+
+        // If we get here, assume it's a second file path if it's empty
+        if file_path_2.is_empty() && !arg.starts_with("-") {
+            file_path_2 = arg.clone();
+            continue;
+        }
+
+        // If we get here, it's an unknown argument
+        return Err(ConfigError::InvalidArgument(arg.clone()));
     }
 
+    // Verify directory if recursive
     if recursive {
-        // Verify file_path_1 is a directory
         let path = path::Path::new(&file_path_1);
         if !path.is_dir() {
             return Err(ConfigError::NotADirectory(file_path_1));
