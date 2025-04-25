@@ -8,7 +8,10 @@ pub fn get_all_files_in_directory(dir_path: &str) -> io::Result<Vec<PathBuf>> {
     let path = Path::new(dir_path);
 
     if path.is_file() {
-        files.push(path.to_path_buf());
+        // Skip the file if it's a hidden file
+        if !is_hidden_file(path) {
+            files.push(path.to_path_buf());
+        }
         return Ok(files);
     }
 
@@ -20,6 +23,11 @@ pub fn get_all_files_in_directory(dir_path: &str) -> io::Result<Vec<PathBuf>> {
             let entry = entry?;
             let path = entry.path();
 
+            // Skip if the file or directory is hidden
+            if is_hidden_file(&path) {
+                continue;
+            }
+
             if path.is_dir() {
                 dirs_to_process.push(path);
             } else if path.is_file() {
@@ -29,4 +37,11 @@ pub fn get_all_files_in_directory(dir_path: &str) -> io::Result<Vec<PathBuf>> {
     }
 
     Ok(files)
+}
+
+fn is_hidden_file(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .map(|name| name.starts_with("."))
+        .unwrap_or(false)
 }
