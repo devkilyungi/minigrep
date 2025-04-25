@@ -18,9 +18,13 @@ impl fmt::Display for ConfigError {
             ConfigError::TooManyArguments => write!(f, "Too many arguments"),
             ConfigError::InvalidCaseFlag(flag) => write!(f, "Invalid case flag: '{}'", flag),
             ConfigError::InvalidContextFlag(flag) => write!(f, "Invalid context flag: '{}'", flag),
-            ConfigError::InvalidContextCount(count) => write!(f, "Invalid context count: '{}'", count),
+            ConfigError::InvalidContextCount(count) => {
+                write!(f, "Invalid context count: '{}'", count)
+            }
             ConfigError::InvalidArgument(arg) => write!(f, "Invalid argument: '{}'", arg),
-            ConfigError::NotADirectory(path) => write!(f, "Path provided is not a directory: '{}'", path),
+            ConfigError::NotADirectory(path) => {
+                write!(f, "Path provided is not a directory: '{}'", path)
+            }
         }
     }
 }

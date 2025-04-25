@@ -4,24 +4,30 @@ mod models;
 mod utils;
 
 use models::{Config, SearchStats};
-use std::{error, fs};
+use std::{
+    error, fs,
+    io::{self, ErrorKind},
+    path, time,
+};
 
 pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
-    let start_time = std::time::Instant::now();
+    let start_time = time::Instant::now();
     let mut stats = SearchStats::init_stats(&config);
 
     // Check file existence upfront
-    if !config.recursive && !std::path::Path::new(&config.file_path_1).exists() {
-        return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
-            format!("File not found: {}", config.file_path_1),
+    // If not a directory and file 1 doesn't exist
+    if !config.recursive && !path::Path::new(&config.file_path_1).exists() {
+        return Err(Box::new(io::Error::new(
+            ErrorKind::NotFound,
+            format!("No such file or directory found: '{}'", config.file_path_1),
         )));
     }
 
-    if !config.file_path_2.is_empty() && !std::path::Path::new(&config.file_path_2).exists() {
-        return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
-            format!("File not found: {}", config.file_path_2),
+    // If file 2 is included in command and it doesn't exist
+    if !config.file_path_2.is_empty() && !path::Path::new(&config.file_path_2).exists() {
+        return Err(Box::new(io::Error::new(
+            ErrorKind::NotFound,
+            format!("No such file found: '{}'", config.file_path_2),
         )));
     }
 
@@ -53,6 +59,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
                                 );
                             }
                         }
+                        // If results is empty, move on to the next file
                     }
                     Err(e) => {
                         if let Some(path_str) = file_path.to_str() {
@@ -64,6 +71,20 @@ pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
             }
         }
     } else {
+        // Handle file search without recursion
+        // Check if the file is a directory
+        let path = path::Path::new(&config.file_path_1);
+        if path.is_dir() {
+            return Err(Box::new(io::Error::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "'{}' is a directory. Use --recursive flag to search directories.",
+                    config.file_path_1
+                ),
+            )));
+        }
+
+        // File is not a directory, continue with search
         let file_1 = fs::read_to_string(&config.file_path_1)?;
         stats.total_lines += file_1.lines().count();
         stats.files_searched += 1;
@@ -177,7 +198,7 @@ mod tests {
         let results = search(query, contents, "", None, false).unwrap();
 
         // Print formatted results for inspection
-        println!("Results: {:#?}, length: {}", results, results.len());
+        // println!("Results: {:#?}, length: {}", results, results.len());
 
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].get_line_number() + 1, 2);
@@ -295,9 +316,9 @@ mod tests {
         results_sorted.sort_by_key(|r| r.get_line_number());
 
         assert_eq!(results_sorted[0].get_line_number() + 1, 2); // Line 2
-        assert_eq!(results_sorted[1].get_line_number() + 1, 3); // match 3
+        assert_eq!(results_sorted[1].get_line_number() + 1, 3); // Line 3 (match)
         assert_eq!(results_sorted[2].get_line_number() + 1, 4); // Line 4
-        assert_eq!(results_sorted[3].get_line_number() + 1, 5); // match 5
+        assert_eq!(results_sorted[3].get_line_number() + 1, 5); // Line 5 (match)
         assert_eq!(results_sorted[4].get_line_number() + 1, 6); // Line 6
     }
 
@@ -316,10 +337,10 @@ mod tests {
         results_sorted.sort_by_key(|r| r.get_line_number());
 
         assert_eq!(results_sorted[0].get_line_number() + 1, 1); // Line 1
-        assert_eq!(results_sorted[1].get_line_number() + 1, 2); // match 2
+        assert_eq!(results_sorted[1].get_line_number() + 1, 2); // Line 2 (match)
         assert_eq!(results_sorted[2].get_line_number() + 1, 3); // Line 3
         assert_eq!(results_sorted[3].get_line_number() + 1, 4); // Line 4
-        assert_eq!(results_sorted[4].get_line_number() + 1, 5); // match 5
+        assert_eq!(results_sorted[4].get_line_number() + 1, 5); // Line 5 (match)
         assert_eq!(results_sorted[5].get_line_number() + 1, 6); // Line 6
     }
 
@@ -342,6 +363,8 @@ mod tests {
         let context_flag = ContextFlag::After.as_str();
 
         let results = search(query, contents, context_flag, Some(1), true).unwrap();
+
+        // Should return an empty vector since there are no matches
         assert_eq!(results.len(), 0);
     }
 
@@ -355,6 +378,12 @@ mod tests {
 
         // Should include lines 0 and 1 without duplicates
         assert_eq!(results.len(), 2);
+
+        let mut results_sorted = results.clone();
+        results_sorted.sort_by_key(|r| r.get_line_number());
+
+        assert_eq!(results_sorted[0].get_line_number() + 1, 1); // Line 1 (match)
+        assert_eq!(results_sorted[1].get_line_number() + 1, 2); // Line 2 (context)
     }
 
     #[test]
@@ -365,7 +394,9 @@ mod tests {
         let results = search(query, contents, "", None, true).unwrap();
 
         assert_eq!(results.len(), 3);
+
         let line_numbers: Vec<usize> = results.iter().map(|r| r.get_line_number()).collect();
+
         assert!(line_numbers.contains(&0)); // Line 1
         assert!(line_numbers.contains(&1)); // Line 2
         assert!(line_numbers.contains(&2)); // Line 3

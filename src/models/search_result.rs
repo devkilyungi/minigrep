@@ -21,7 +21,7 @@ impl SearchResult {
     pub fn get_line_number(&self) -> usize {
         self.line_number
     }
-    
+
     pub fn get_line_content(&self) -> &str {
         &self.line_content
     }

@@ -3,6 +3,7 @@ use regex::Regex;
 use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
+// file_label is the file path
 pub fn display_results(file_label: &str, results: &[SearchResult], ignore_case: bool) {
     if results.is_empty() {
         println!("{file_label}: No matches found.");
@@ -24,7 +25,6 @@ fn display_search_result(search_result: &SearchResult, ignore_case: bool) {
 
     // Check if there are any matching patterns
     let matching_patterns = search_result.get_matching_patterns();
-
     if matching_patterns.is_empty() {
         // No patterns to highlight, just print the line
         println!("{}", search_result.get_line_content());
@@ -57,7 +57,7 @@ fn display_search_result(search_result: &SearchResult, ignore_case: bool) {
             for captures in regex.captures_iter(line) {
                 let m = captures.get(0).unwrap();
 
-                // Print text before match (safer approach)
+                // Print text before match
                 let before_match = &line[last_match_end..m.start()];
                 let _ = write!(&mut stdout, "{}", before_match);
 
@@ -92,10 +92,11 @@ fn display_search_result(search_result: &SearchResult, ignore_case: bool) {
 
                 let mut indices = Vec::new();
                 let mut start = 0;
-                while let Some(pos) = content_lower[start..].find(&pattern_lower) {
-                    let absolute_pos = start + pos;
-                    indices.push((absolute_pos, absolute_pos + pattern_lower.len()));
-                    start = absolute_pos + 1;
+                while let Some(position) = content_lower[start..].find(&pattern_lower) {
+                    let absolute_position = start + position;
+                    // (start of match, end of match)
+                    indices.push((absolute_position, absolute_position + pattern_lower.len()));
+                    start = absolute_position + 1;
                 }
                 indices
             } else {
@@ -150,7 +151,6 @@ fn display_search_result(search_result: &SearchResult, ignore_case: bool) {
     }
 }
 
-// In display.rs, update print_help function:
 pub fn print_help() {
     println!(
         "minigrep v{} - Search for patterns in files",

@@ -48,6 +48,7 @@ impl SearchStats {
                         self.total_matches += regex.find_iter(line).count();
                     }
                 }
+                // If result is empty, move on to the next result
             }
         } else {
             // For regular patterns, use the existing count method
@@ -75,11 +76,13 @@ fn count_actual_matches(results: &[SearchResult], ignore_case: bool) -> usize {
             result.get_matching_patterns().iter().map(move |pattern| {
                 let mut count = 0;
                 let mut start = 0;
+
                 let pattern_lower = if ignore_case {
                     pattern.to_lowercase()
                 } else {
                     pattern.clone()
                 };
+
                 let line_lower = if ignore_case {
                     line.to_lowercase()
                 } else {

@@ -2,17 +2,17 @@ use crate::{
     core,
     models::{Config, ConfigError, ContextFlag},
 };
-use std::env;
+use std::{env, path, process};
 
 pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
     if args.len() > 1 && (args[1] == "--help" || args[1] == "-h") {
         core::print_help();
-        std::process::exit(0);
+        process::exit(0);
     }
 
     if args.len() > 1 && (args[1] == "--version" || args[1] == "-v") {
         println!("minigrep {}", env!("CARGO_PKG_VERSION"));
-        std::process::exit(0);
+        process::exit(0);
     }
 
     if args.len() < 3 {
@@ -30,7 +30,7 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
 
     match args.len() {
         3 => {
-            // Format: [binary, query, file_path_1/directory]
+            // Format: [binary, query, file_path_1]
             // Example: minigrep "pattern" file.txt
             // ignore_case defaults to env var setting
         }
@@ -373,10 +373,10 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
         }
         _ => return Err(ConfigError::TooManyArguments),
     }
-    
+
     if recursive {
         // Verify file_path_1 is a directory
-        let path = std::path::Path::new(&file_path_1);
+        let path = path::Path::new(&file_path_1);
         if !path.is_dir() {
             return Err(ConfigError::NotADirectory(file_path_1));
         }

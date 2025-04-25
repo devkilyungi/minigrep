@@ -85,6 +85,7 @@ mod integration_tests {
         assert!(clean_stdout.contains("Files searched: 1"));
         assert!(clean_stdout.contains("Total lines searched: 9"));
         assert!(clean_stdout.contains("Matches found: 2"));
+        assert!(clean_stdout.contains("------------------------"));
     }
 
     #[test]
@@ -117,7 +118,7 @@ mod integration_tests {
         let stderr = String::from_utf8(output.stderr).unwrap();
 
         assert!(stderr.contains("Application error:"));
-        assert!(stderr.contains("No such file or directory"));
+        assert!(stderr.contains("No such file or directory found: 'nonexistent-file.txt'"));
         assert_eq!(output.status.code(), Some(1));
     }
 }

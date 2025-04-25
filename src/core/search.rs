@@ -1,20 +1,22 @@
-use regex::Regex;
-
 use crate::models::SearchResult;
-use std::collections::HashSet;
+use regex::Regex;
+use std::{
+    collections::HashSet,
+    error,
+    io::{self, ErrorKind},
+};
 
 pub fn search(
     query: &str,
     contents: &str,
     context: &str,
-    content_count: Option<usize>,
+    content_count: Option<usize>, // Option because tests test for non-existing content_count
     ignore_case: bool,
-) -> Result<Vec<SearchResult>, Box<dyn std::error::Error>> {
+) -> Result<Vec<SearchResult>, Box<dyn error::Error>> {
     let lines: Vec<&str> = contents.lines().collect();
     let mut line_numbers_to_include = HashSet::new();
 
     // Check if the query looks like a regex pattern
-    // Common regex indicators: *, +, ?, ., \, [, ], (, ), {, }, ^, $
     let regex_indicators = [
         '*', '+', '?', '.', '\\', '[', ']', '(', ')', '{', '}', '^', '$',
     ];
@@ -34,9 +36,9 @@ pub fn search(
         let regex = match regex_result {
             Ok(r) => r,
             Err(e) => {
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    format!("Invalid regex pattern: {}", e),
+                return Err(Box::new(io::Error::new(
+                    ErrorKind::InvalidInput,
+                    format!("Invalid regex pattern: '{}'", e),
                 )));
             }
         };
@@ -44,7 +46,7 @@ pub fn search(
         // Find matches using regex
         for (line_number, line_content) in lines.iter().enumerate() {
             if regex.is_match(line_content) {
-                // Add this line and handle context
+                // Add matched line
                 line_numbers_to_include.insert(line_number);
 
                 // Handle context based on the flag
@@ -94,7 +96,7 @@ pub fn search(
             results.push(SearchResult::new(
                 line_number,
                 line_content,
-                vec![query.to_string()], // Store the regex pattern for highlighting
+                vec![query.to_string()], // Store the regex pattern as a plain string
             ));
         }
 

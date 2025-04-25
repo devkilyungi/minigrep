@@ -1,13 +1,12 @@
+use minigrep::{config, core};
 use std::{env, process};
-
-use minigrep::config;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() <= 1 {
         println!("Error: Not enough arguments\n");
-        minigrep::core::print_help();
+        core::print_help();
         process::exit(1);
     }
 

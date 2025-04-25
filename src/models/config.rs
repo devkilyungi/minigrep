@@ -1,5 +1,16 @@
 use std::fmt;
 
+pub struct Config {
+    pub query: String,
+    pub file_path_1: String,
+    pub file_path_2: String, // can be an empty string or contain the second file name
+    pub ignore_case: bool,
+    pub context_flag: ContextFlag,
+    pub context_count: u8,
+    pub show_stats: bool,
+    pub recursive: bool,
+}
+
 #[derive(PartialEq)]
 pub enum ContextFlag {
     Before,
@@ -38,15 +49,4 @@ impl fmt::Display for ContextFlag {
             ContextFlag::Stats => write!(f, "stats"),
         }
     }
-}
-
-pub struct Config {
-    pub query: String,
-    pub file_path_1: String,
-    pub file_path_2: String, // can be an empty string or contain the second file name
-    pub ignore_case: bool,
-    pub context_flag: ContextFlag,
-    pub context_count: u8,
-    pub show_stats: bool,
-    pub recursive: bool,
 }
