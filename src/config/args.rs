@@ -42,8 +42,8 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
     //
     // All these options can be combined in any order after the query and first file
 
-    for i in 3..args.len() {
-        let arg = &args[i];
+    for index in 3..args.len() {
+        let arg = &args[index];
 
         // Handle case sensitivity flags
         if arg == "-ic" {
@@ -70,8 +70,8 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
         if arg == "--before" || arg == "--b" {
             context_flag = ContextFlag::Before;
             // Look for context count in next argument
-            if i + 1 < args.len() {
-                if let Ok(count) = args[i + 1].parse::<u8>() {
+            if index + 1 < args.len() {
+                if let Ok(count) = args[index + 1].parse::<u8>() {
                     context_count = count;
                     // Skip the next argument since we consumed it
                     continue;
@@ -81,8 +81,8 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
             continue;
         } else if arg == "--after" || arg == "--a" {
             context_flag = ContextFlag::After;
-            if i + 1 < args.len() {
-                if let Ok(count) = args[i + 1].parse::<u8>() {
+            if index + 1 < args.len() {
+                if let Ok(count) = args[index + 1].parse::<u8>() {
                     context_count = count;
                     continue;
                 }
@@ -91,8 +91,8 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
             continue;
         } else if arg == "--context" || arg == "--c" {
             context_flag = ContextFlag::Context;
-            if i + 1 < args.len() {
-                if let Ok(count) = args[i + 1].parse::<u8>() {
+            if index + 1 < args.len() {
+                if let Ok(count) = args[index + 1].parse::<u8>() {
                     context_count = count;
                     continue;
                 }
@@ -103,13 +103,13 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
 
         // If it's a number following a context flag, we've already handled it
         if arg.parse::<u8>().is_ok()
-            && i > 3
-            && (args[i - 1] == "--before"
-                || args[i - 1] == "--b"
-                || args[i - 1] == "--after"
-                || args[i - 1] == "--a"
-                || args[i - 1] == "--context"
-                || args[i - 1] == "--c")
+            && index > 3
+            && (args[index - 1] == "--before"
+                || args[index - 1] == "--b"
+                || args[index - 1] == "--after"
+                || args[index - 1] == "--a"
+                || args[index - 1] == "--context"
+                || args[index - 1] == "--c")
         {
             continue;
         }
