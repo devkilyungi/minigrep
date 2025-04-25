@@ -152,12 +152,14 @@ fn display_search_result(search_result: &SearchResult, ignore_case: bool) {
 }
 
 pub fn print_help() {
-    use std::io::Write;
-    use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
-
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    let mut cyan_bold = ColorSpec::new();
-    cyan_bold.set_fg(Some(Color::Cyan)).set_bold(true);
+
+    // Create color specs
+    let mut green_bold = ColorSpec::new();
+    green_bold.set_fg(Some(Color::Green)).set_bold(true);
+
+    let mut cyan = ColorSpec::new();
+    cyan.set_fg(Some(Color::Cyan));
 
     // Helper function to print a section header
     fn print_section(stdout: &mut StandardStream, color_spec: &ColorSpec, text: &str) {
@@ -166,17 +168,37 @@ pub fn print_help() {
         let _ = stdout.reset();
     }
 
-    // Helper function to print an option and its description
+    // Helper function to print an option and its description with aligned spacing
     fn print_option(
         stdout: &mut StandardStream,
         color_spec: &ColorSpec,
         option: &str,
         description: &str,
+        section: &str,
     ) {
+        let _ = write!(stdout, "  "); // Indent options
         let _ = stdout.set_color(color_spec);
-        let _ = write!(stdout, "    {}", option);
+        let _ = write!(stdout, "{}", option);
         let _ = stdout.reset();
-        let _ = writeln!(stdout, " {}", description);
+
+        // Calculate padding needed based on section type
+        let column_width = match section {
+            "EXAMPLES" | "REGEX EXAMPLES" => 40, // Examples need more space
+            "CONTEXT OPTIONS" | "OUTPUT OPTIONS" | "DIRECTORY OPTIONS" => 25, // Options need more space
+            "SEARCH OPTIONS" | "ARGUMENTS" => 20,                             // Short options
+            "OTHER OPTIONS" => 20,                                            // Short options
+            "ENVIRONMENT" => 15,                                              // Short options
+            "EXIT CODES" => 10,                                               // Very short options
+            _ => 30, // Default for other sections
+        };
+
+        let padding_length = if option.len() >= column_width {
+            2
+        } else {
+            column_width - option.len()
+        };
+        let padding = " ".repeat(padding_length);
+        let _ = writeln!(stdout, "{}{}", padding, description);
     }
 
     // Title
@@ -188,7 +210,7 @@ pub fn print_help() {
     let _ = writeln!(&mut stdout);
 
     // Usage
-    print_section(&mut stdout, &cyan_bold, "USAGE:");
+    print_section(&mut stdout, &green_bold, "USAGE:");
     let _ = writeln!(
         &mut stdout,
         "    minigrep PATTERN FILENAME [SECOND_FILENAME] [OPTIONS]"
@@ -196,187 +218,223 @@ pub fn print_help() {
     let _ = writeln!(&mut stdout);
 
     // Arguments
-    print_section(&mut stdout, &cyan_bold, "ARGUMENTS:");
+    print_section(&mut stdout, &green_bold, "ARGUMENTS:");
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "PATTERN",
         "Text or regex pattern to search for",
+        "ARGUMENTS",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "FILENAME",
         "File or directory to search in",
+        "ARGUMENTS",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "[SECOND_FILENAME]",
         "Optional second file to search in",
+        "ARGUMENTS",
     );
     let _ = writeln!(&mut stdout);
 
     // Search options
-    print_section(&mut stdout, &cyan_bold, "SEARCH OPTIONS:");
-    print_option(&mut stdout, &cyan_bold, "-ic", "Ignore case when searching");
+    print_section(&mut stdout, &green_bold, "SEARCH OPTIONS:");
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
+        "-ic",
+        "Ignore case when searching",
+        "SEARCH OPTIONS",
+    );
+    print_option(
+        &mut stdout,
+        &cyan,
         "-cs",
         "Force case-sensitive search (overrides IGNORE_CASE env)",
+        "SEARCH OPTIONS",
     );
     let _ = writeln!(&mut stdout);
 
     // Context options
-    print_section(&mut stdout, &cyan_bold, "CONTEXT OPTIONS:");
+    print_section(&mut stdout, &green_bold, "CONTEXT OPTIONS:");
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "--before N, --b N",
         "Show N lines before each match",
+        "CONTEXT OPTIONS",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "--after N, --a N",
         "Show N lines after each match",
+        "CONTEXT OPTIONS",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "--context N, --c N",
         "Show N lines before and after each match",
+        "CONTEXT OPTIONS",
     );
     let _ = writeln!(&mut stdout);
 
     // Output options
-    print_section(&mut stdout, &cyan_bold, "OUTPUT OPTIONS:");
+    print_section(&mut stdout, &green_bold, "OUTPUT OPTIONS:");
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "--stats, --s",
         "Display search statistics",
+        "OUTPUT OPTIONS",
     );
     let _ = writeln!(&mut stdout);
 
     // Directory options
-    print_section(&mut stdout, &cyan_bold, "DIRECTORY OPTIONS:");
+    print_section(&mut stdout, &green_bold, "DIRECTORY OPTIONS:");
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "--recursive, --r",
         "Recursively search through all files in a directory",
+        "DIRECTORY OPTIONS",
     );
     let _ = writeln!(&mut stdout);
 
     // Other options
-    print_section(&mut stdout, &cyan_bold, "OTHER OPTIONS:");
+    print_section(&mut stdout, &green_bold, "OTHER OPTIONS:");
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "--help, -h",
         "Display this help message",
+        "OTHER OPTIONS",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "--version, -v",
         "Display version information",
+        "OTHER OPTIONS",
     );
     let _ = writeln!(&mut stdout);
 
     // Examples
-    print_section(&mut stdout, &cyan_bold, "EXAMPLES:");
+    print_section(&mut stdout, &green_bold, "EXAMPLES:");
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "minigrep to poem.txt",
         "Basic search",
+        "EXAMPLES",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "minigrep to poem.txt -ic",
         "Case-insensitive search",
+        "EXAMPLES",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "minigrep to poem.txt --stats",
         "Show search statistics",
+        "EXAMPLES",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "minigrep to poem.txt --context 2",
         "Show context around matches",
+        "EXAMPLES",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "minigrep to poem.txt sunrise.txt",
         "Search in multiple files",
+        "EXAMPLES",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "minigrep to directory --recursive",
         "Search recursively in directory",
+        "EXAMPLES",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "minigrep to poem.txt -ic --stats",
         "Combine multiple options",
+        "EXAMPLES",
     );
     let _ = writeln!(&mut stdout);
 
     // Regex examples
-    print_section(&mut stdout, &cyan_bold, "REGEX EXAMPLES:");
+    print_section(&mut stdout, &green_bold, "REGEX EXAMPLES:");
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "minigrep \"\\bw\\w+\" poem.txt",
         "Find all words starting with 'w'",
+        "REGEX EXAMPLES",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "minigrep \"s.n\" sunrise.txt",
         "Match any character between 's' and 'n'",
+        "REGEX EXAMPLES",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "minigrep \"\\w+ing\\b\" poem.txt -ic",
         "Find words ending in 'ing' (case insensitive)",
+        "REGEX EXAMPLES",
     );
     print_option(
         &mut stdout,
-        &cyan_bold,
-        "minigrep \"test|assert\" directory/ --r",
+        &cyan,
+        "minigrep \"test|assert\" dir/ --r",
         "Find 'test' or 'assert' in directory",
+        "REGEX EXAMPLES",
     );
     let _ = writeln!(&mut stdout);
 
     // Environment
-    print_section(&mut stdout, &cyan_bold, "ENVIRONMENT:");
+    print_section(&mut stdout, &green_bold, "ENVIRONMENT:");
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
         "IGNORE_CASE",
         "Set to any value to enable case-insensitive search by default",
+        "ENVIRONMENT",
     );
     let _ = writeln!(&mut stdout);
 
     // Exit codes
-    print_section(&mut stdout, &cyan_bold, "EXIT CODES:");
-    print_option(&mut stdout, &cyan_bold, "0", "Successful execution");
+    print_section(&mut stdout, &green_bold, "EXIT CODES:");
     print_option(
         &mut stdout,
-        &cyan_bold,
+        &cyan,
+        "0",
+        "Successful execution",
+        "EXIT CODES",
+    );
+    print_option(
+        &mut stdout,
+        &cyan,
         "1",
         "Error occurred (invalid arguments, file not found, etc.)",
+        "EXIT CODES",
     );
 }
