@@ -2,26 +2,37 @@ use crate::{
     core,
     models::{Config, ConfigError, ContextFlag},
 };
-use std::{env, path, process};
+use std::{env, mem, path, process};
 
-pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
-    if args.len() > 1 && (args[1] == "--help" || args[1] == "-h") {
+pub fn parse_args<I>(args: I) -> Result<Config, ConfigError>
+where
+    I: Iterator<Item = String>,
+{
+    let mut args_vec: Vec<String> = args.collect();
+
+    if args_vec.len() <= 1 {
+        println!("Error: Not enough arguments\n");
+        core::print_help();
+        process::exit(1);
+    }
+
+    if args_vec.len() > 1 && (args_vec[1] == "--help" || args_vec[1] == "-h") {
         core::print_help();
         process::exit(0);
     }
 
-    if args.len() > 1 && (args[1] == "--version" || args[1] == "-v") {
+    if args_vec.len() > 1 && (args_vec[1] == "--version" || args_vec[1] == "-v") {
         println!("minigrep {}", env!("CARGO_PKG_VERSION"));
         process::exit(0);
     }
 
-    if args.len() < 3 {
+    if args_vec.len() < 3 {
         return Err(ConfigError::NotEnoughArguments);
     }
 
     // Core arguments
-    let query = args[1].clone();
-    let file_path_1 = args[2].clone();
+    let query = mem::take(&mut args_vec[1]);
+    let file_path_1 = mem::take(&mut args_vec[2]);
 
     // Default values
     let mut file_path_2 = "".to_string();
@@ -42,86 +53,77 @@ pub fn parse_args(args: &[String]) -> Result<Config, ConfigError> {
     //
     // All these options can be combined in any order after the query and first file
 
-    for index in 3..args.len() {
-        let arg = &args[index];
+    let mut i = 3;
+    while i < args_vec.len() {
+        let arg = &args_vec[i];
 
-        // Handle case sensitivity flags
-        if arg == "-ic" {
-            ignore_case = true;
-            continue;
-        } else if arg == "-cs" {
-            ignore_case = false;
-            continue;
-        }
+        match arg.as_str() {
+            // Case sensitivity flags
+            "-ic" => ignore_case = true,
+            "-cs" => ignore_case = false,
 
-        // Handle stats flag
-        if arg == "--stats" || arg == "--s" {
-            show_stats = true;
-            continue;
-        }
+            // Stats flag
+            "--stats" | "--s" => show_stats = true,
 
-        // Handle recursive flag
-        if arg == "--recursive" || arg == "--r" {
-            recursive = true;
-            continue;
-        }
+            // Recursive flag
+            "--recursive" | "--r" => recursive = true,
 
-        // Handle context flags
-        if arg == "--before" || arg == "--b" {
-            context_flag = ContextFlag::Before;
-            // Look for context count in next argument
-            if index + 1 < args.len() {
-                if let Ok(count) = args[index + 1].parse::<u8>() {
-                    context_count = count;
-                    // Skip the next argument since we consumed it
-                    continue;
+            // Context flags
+            "--before" | "--b" => {
+                context_flag = ContextFlag::Before;
+                // Check for context count in next argument
+                if i + 1 < args_vec.len() {
+                    if let Ok(count) = args_vec[i + 1].parse::<u8>() {
+                        context_count = count;
+                        i += 1; // Skip the next argument
+                    } else {
+                        context_count = 1; // Default count
+                    }
+                } else {
+                    context_count = 1; // Default count
                 }
             }
-            context_count = 1; // Default count if not specified
-            continue;
-        } else if arg == "--after" || arg == "--a" {
-            context_flag = ContextFlag::After;
-            if index + 1 < args.len() {
-                if let Ok(count) = args[index + 1].parse::<u8>() {
-                    context_count = count;
-                    continue;
+
+            "--after" | "--a" => {
+                context_flag = ContextFlag::After;
+                // Check for context count in next argument
+                if i + 1 < args_vec.len() {
+                    if let Ok(count) = args_vec[i + 1].parse::<u8>() {
+                        context_count = count;
+                        i += 1; // Skip the next argument
+                    } else {
+                        context_count = 1; // Default count
+                    }
+                } else {
+                    context_count = 1; // Default count
                 }
             }
-            context_count = 1;
-            continue;
-        } else if arg == "--context" || arg == "--c" {
-            context_flag = ContextFlag::Context;
-            if index + 1 < args.len() {
-                if let Ok(count) = args[index + 1].parse::<u8>() {
-                    context_count = count;
-                    continue;
+
+            "--context" | "--c" => {
+                context_flag = ContextFlag::Context;
+                // Check for context count in next argument
+                if i + 1 < args_vec.len() {
+                    if let Ok(count) = args_vec[i + 1].parse::<u8>() {
+                        context_count = count;
+                        i += 1; // Skip the next argument
+                    } else {
+                        context_count = 1; // Default count
+                    }
+                } else {
+                    context_count = 1; // Default count
                 }
             }
-            context_count = 1;
-            continue;
+
+            // If we get here, assume it's a second file path if it's empty
+            _ if file_path_2.is_empty() && !arg.starts_with("-") => {
+                file_path_2 = std::mem::take(&mut args_vec[i]);
+            }
+
+            // Unknown argument
+            _ => return Err(ConfigError::InvalidArgument(arg.clone())),
         }
 
-        // If it's a number following a context flag, we've already handled it
-        if arg.parse::<u8>().is_ok()
-            && index > 3
-            && (args[index - 1] == "--before"
-                || args[index - 1] == "--b"
-                || args[index - 1] == "--after"
-                || args[index - 1] == "--a"
-                || args[index - 1] == "--context"
-                || args[index - 1] == "--c")
-        {
-            continue;
-        }
-
-        // If we get here, assume it's a second file path if it's empty
-        if file_path_2.is_empty() && !arg.starts_with("-") {
-            file_path_2 = arg.clone();
-            continue;
-        }
-
-        // If we get here, it's an unknown argument
-        return Err(ConfigError::InvalidArgument(arg.clone()));
+        i += 1;
     }
 
     // Verify directory if recursive

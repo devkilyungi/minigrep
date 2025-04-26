@@ -162,7 +162,7 @@ mod tests {
             String::from("file_path"),
         ];
 
-        let config = parse_args(&args).unwrap();
+        let config = parse_args(args.into_iter()).unwrap();
 
         assert_eq!(config.query, "query");
         assert_eq!(config.file_path_1, "file_path");
