@@ -1,9 +1,26 @@
+//! Command-line argument parsing for minigrep.
 use crate::{
     core,
     models::{Config, ConfigError, ContextFlag},
 };
 use std::{env, mem, path, process};
 
+/// Parses command-line arguments into a Config object.
+///
+/// # Arguments
+///
+/// * `args` - An iterator of command-line arguments
+///
+/// # Returns
+///
+/// * `Result<Config, ConfigError>` - A valid configuration or an error message
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Not enough arguments are provided
+/// - Too many arguments are provided
+/// - Invalid flags or arguments are specified
 pub fn parse_args<I>(args: I) -> Result<Config, ConfigError>
 where
     I: Iterator<Item = String>,

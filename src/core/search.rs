@@ -1,3 +1,5 @@
+//! Core search functionality for finding pattern matches in text.
+
 use crate::models::SearchResult;
 use regex::Regex;
 use std::{
@@ -6,6 +8,23 @@ use std::{
     io::{self, ErrorKind},
 };
 
+/// Searches content for matches of a query pattern, with context support.
+///
+/// # Arguments
+///
+/// * `query` - The pattern to search for (may be plain text or regex)
+/// * `contents` - The text content to search within
+/// * `context` - Type of context to display ("before", "after", "context", or "")
+/// * `content_count` - Number of context lines to include
+/// * `ignore_case` - Whether to perform case-insensitive matching
+///
+/// # Returns
+///
+/// * `Result<Vec<SearchResult>, Error>` - A vector of search results or an error
+///
+/// # Errors
+///
+/// Returns an error if the query contains an invalid regex pattern.
 pub fn search(
     query: &str,
     contents: &str,

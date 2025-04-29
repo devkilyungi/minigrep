@@ -1,8 +1,26 @@
+//! Utility functions for the minigrep tool.
+
 use std::{
     fs, io,
     path::{Path, PathBuf},
 };
 
+/// Recursively gathers all files in a directory.
+///
+/// # Arguments
+///
+/// * `dir_path` - Path to the directory to scan
+///
+/// # Returns
+///
+/// * `Result<Vec<PathBuf>, io::Error>` - Collection of file paths or an error
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The directory doesn't exist
+/// - The directory can't be read
+/// - A subdirectory can't be accessed
 pub fn get_all_files_in_directory(dir_path: &str) -> io::Result<Vec<PathBuf>> {
     let mut files = Vec::new();
     let path = Path::new(dir_path);

@@ -1,5 +1,11 @@
+//! Contains configuration models and parsing logic for minigrep.
+
 use std::fmt;
 
+/// Configuration for a minigrep search operation.
+///
+/// Holds all the parameters that control the search behavior,
+/// including query patterns, file paths, and various options.
 pub struct Config {
     pub query: String,
     pub file_path_1: String,
@@ -11,15 +17,31 @@ pub struct Config {
     pub recursive: bool,
 }
 
+/// Represents the context display mode for search results.
+///
+/// Determines how many lines before and/or after a match are displayed.
 #[derive(PartialEq)]
 pub enum ContextFlag {
+    /// Display lines before matches
     Before,
+    /// Display lines after matches
     After,
+    /// Display lines before and after matches
     Context,
+    /// Display search statistics
     Stats,
 }
 
 impl ContextFlag {
+    /// Creates a new ContextFlag from a string representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `flag` - A string that should be one of: "before", "after", "context", or "stats"
+    ///
+    /// # Panics
+    ///
+    /// Panics if the string doesn't match any of the valid flag values.
     pub fn new(flag: &str) -> Self {
         match flag {
             "before" => Self::Before,
@@ -30,6 +52,7 @@ impl ContextFlag {
         }
     }
 
+    /// Returns the string representation of this ContextFlag.
     pub fn as_str(&self) -> &str {
         match self {
             ContextFlag::Before => "before",

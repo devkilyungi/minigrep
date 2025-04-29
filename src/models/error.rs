@@ -1,5 +1,11 @@
+//! Contains a custom error model with variants returned after argument parsing results in an error
+
 use std::{error, fmt};
 
+/// Errors that can occur during command-line argument parsing.
+///
+/// These errors represent the various ways that user-provided command-line
+/// arguments might be invalid when configuring the minigrep tool.
 #[derive(Debug)]
 pub enum ConfigError {
     NotEnoughArguments,

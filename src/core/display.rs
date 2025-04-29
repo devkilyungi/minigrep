@@ -1,9 +1,17 @@
+//! Functionality for displaying search results with formatting and highlighting.
+
 use crate::models::SearchResult;
 use regex::Regex;
 use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
-// file_label is the file path
+/// Displays search results for a specific file with highlighting.
+///
+/// # Arguments
+///
+/// * `file_label` - Name or path of the file containing the matches
+/// * `results` - Search results to display
+/// * `ignore_case` - Whether the search was case-insensitive
 pub fn display_results(file_label: &str, results: &[SearchResult], ignore_case: bool) {
     if results.is_empty() {
         println!("{file_label}: No matches found.");
@@ -15,6 +23,12 @@ pub fn display_results(file_label: &str, results: &[SearchResult], ignore_case: 
     }
 }
 
+/// Displays a single search result with highlighted matches.
+///
+/// # Arguments
+///
+/// * `search_result` - The search result to display
+/// * `ignore_case` - Whether the search was case-insensitive
 fn display_search_result(search_result: &SearchResult, ignore_case: bool) {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     let mut highlight_spec = ColorSpec::new();
@@ -151,6 +165,7 @@ fn display_search_result(search_result: &SearchResult, ignore_case: bool) {
     }
 }
 
+/// Prints help information about the minigrep tool.
 pub fn print_help() {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
 

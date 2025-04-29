@@ -1,15 +1,57 @@
+//! # Minigrep
+//!
+//! A command-line tool for searching text patterns in files, inspired by Unix's grep.
+//!
+//! Minigrep supports multiple search modes, context display options, recursive directory
+//! searching, and detailed statistics about search operations.
+//!
+//! ## Features
+//!
+//! - Case-sensitive and case-insensitive searching
+//! - Multiple file and recursive directory search
+//! - Context display (before, after, or surrounding matches)
+//! - Support for regular expressions
+//! - Search statistics (matches, lines searched, time taken)
+//! - Highlighted output for matched text
+
 pub mod config;
 pub mod core;
-mod models;
+pub mod models;
 mod utils;
 
-use models::{Config, SearchStats};
+pub use models::{Config, SearchResult, SearchStats, ContextFlag};
 use std::{
     error, fs,
     io::{self, ErrorKind},
     path, time,
 };
 
+/// Runs the minigrep search operation based on provided configuration.
+///
+/// # Arguments
+///
+/// * `config` - Configuration settings including query, file paths, and search options
+///
+/// # Returns
+///
+/// * `Result<(), Box<dyn error::Error>>` - Success or an error message
+///
+/// # Examples
+///
+/// ```no_run
+/// use minigrep::{config, Config};
+/// 
+/// let args = std::env::args();
+/// let config = config::parse_args(args).unwrap();
+/// minigrep::run(config).unwrap();
+/// ```
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The specified file(s) can't be found or read
+/// - A directory is specified without the recursive flag
+/// - The search operation encounters an error
 pub fn run(config: Config) -> Result<(), Box<dyn error::Error>> {
     let start_time = time::Instant::now();
     let mut stats = SearchStats::init_stats(&config);

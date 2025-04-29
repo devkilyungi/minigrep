@@ -1,6 +1,12 @@
+//! Provides functionality for tracking and displaying search statistics.
+
 use crate::models::{Config, SearchResult};
 use std::time::Duration;
 
+/// Tracks statistics about a search operation.
+///
+/// Collects metrics such as number of files searched, lines processed,
+/// matches found, and time taken for the search operation.
 pub struct SearchStats {
     pub query: String,
     pub total_lines: usize,
@@ -10,6 +16,11 @@ pub struct SearchStats {
 }
 
 impl SearchStats {
+    /// Initializes a new SearchStats instance from a Config.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - The search configuration to extract initial data from
     pub fn init_stats(config: &Config) -> Self {
         SearchStats {
             query: config.query.clone(),
@@ -20,6 +31,12 @@ impl SearchStats {
         }
     }
 
+    /// Updates the match count based on search results.
+    ///
+    /// # Arguments
+    ///
+    /// * `results` - The search results to count matches from
+    /// * `config` - The search configuration used
     pub fn update_match_count(&mut self, results: &[SearchResult], config: &Config) {
         // Check if we're using regex patterns
         let regex_indicators = [
@@ -56,6 +73,7 @@ impl SearchStats {
         }
     }
 
+    /// Displays the collected statistics to the console.
     pub fn display(&self) {
         println!("\n--- Search Statistics ---");
         println!("Pattern searched: '{}'", self.query);
@@ -67,6 +85,19 @@ impl SearchStats {
     }
 }
 
+/// Counts the total number of pattern matches across all search results.
+///
+/// This function performs a detailed count of all individual pattern matches,
+/// including multiple occurrences of the same pattern within a single line.
+///
+/// # Arguments
+///
+/// * `results` - A slice of SearchResult objects to count matches in
+/// * `ignore_case` - Whether to perform case-insensitive matching
+///
+/// # Returns
+///
+/// The total count of all pattern matches found
 fn count_actual_matches(results: &[SearchResult], ignore_case: bool) -> usize {
     results
         .iter()
