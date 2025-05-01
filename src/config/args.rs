@@ -62,10 +62,10 @@ where
     // Process remaining arguments
     // Supported formats:
     // 1. minigrep <query> <file>
-    // 2. minigrep <query> <file> -ic/--cs (case options)
-    // 3. minigrep <query> <file> --stats/--s (statistics)
-    // 4. minigrep <query> <file> --context/--c/--before/--b/--after/--a [count]
-    // 5. minigrep <query> <directory> --recursive/--r (recursive search)
+    // 2. minigrep <query> <file> -ic/-cs (case options)
+    // 3. minigrep <query> <file> --stats/-s (statistics)
+    // 4. minigrep <query> <file> --context/-c/--before/-b/--after/-a [count]
+    // 5. minigrep <query> <directory> --recursive/-r (recursive search)
     // 6. minigrep <query> <file1> <file2> (multiple files)
     //
     // All these options can be combined in any order after the query and first file
@@ -80,13 +80,13 @@ where
             "-cs" => ignore_case = false,
 
             // Stats flag
-            "--stats" | "--s" => show_stats = true,
+            "--stats" | "-s" => show_stats = true,
 
             // Recursive flag
-            "--recursive" | "--r" => recursive = true,
+            "--recursive" | "-r" => recursive = true,
 
             // Context flags
-            "--before" | "--b" => {
+            "--before" | "-b" => {
                 context_flag = ContextFlag::Before;
                 // Check for context count in next argument
                 if i + 1 < args_vec.len() {
@@ -101,7 +101,7 @@ where
                 }
             }
 
-            "--after" | "--a" => {
+            "--after" | "-a" => {
                 context_flag = ContextFlag::After;
                 // Check for context count in next argument
                 if i + 1 < args_vec.len() {
@@ -116,7 +116,7 @@ where
                 }
             }
 
-            "--context" | "--c" => {
+            "--context" | "-c" => {
                 context_flag = ContextFlag::Context;
                 // Check for context count in next argument
                 if i + 1 < args_vec.len() {

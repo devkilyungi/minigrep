@@ -280,21 +280,21 @@ pub fn print_help() {
     print_option(
         &mut stdout,
         &cyan,
-        "--before N, --b N",
+        "--before N, -b N",
         "Show N lines before each match",
         "CONTEXT OPTIONS",
     );
     print_option(
         &mut stdout,
         &cyan,
-        "--after N, --a N",
+        "--after N, -a N",
         "Show N lines after each match",
         "CONTEXT OPTIONS",
     );
     print_option(
         &mut stdout,
         &cyan,
-        "--context N, --c N",
+        "--context N, -c N",
         "Show N lines before and after each match",
         "CONTEXT OPTIONS",
     );
@@ -305,7 +305,7 @@ pub fn print_help() {
     print_option(
         &mut stdout,
         &cyan,
-        "--stats, --s",
+        "--stats, -s",
         "Display search statistics",
         "OUTPUT OPTIONS",
     );
@@ -316,7 +316,7 @@ pub fn print_help() {
     print_option(
         &mut stdout,
         &cyan,
-        "--recursive, --r",
+        "--recursive, -r",
         "Recursively search through all files in a directory",
         "DIRECTORY OPTIONS",
     );
@@ -419,7 +419,7 @@ pub fn print_help() {
     print_option(
         &mut stdout,
         &cyan,
-        "minigrep \"test|assert\" dir/ --r",
+        "minigrep \"test|assert\" dir/ -r",
         "Find 'test' or 'assert' in directory",
         "REGEX EXAMPLES",
     );
