@@ -21,7 +21,7 @@ A command-line tool for searching text patterns in files, inspired by the Unix `
 **Error: Is a directory**
 
 - If you get this error, you're trying to search a directory without the `--recursive` flag
-- Solution: Add `--recursive` or `--r` flag when searching directories
+- Solution: Add `--recursive` or `-r` flag when searching directories
 
 **No matches found**
 
@@ -68,17 +68,17 @@ minigrep PATTERN FILENAME [SECOND_FILENAME] [OPTIONS]
 
 **Context Options:**
 
-- `--before N, --b N`: Show N lines before each match
-- `--after N, --a N`: Show N lines after each match
-- `--context N, --c N`: Show N lines before and after each match
+- `--before N, -b N`: Show N lines before each match
+- `--after N, -a N`: Show N lines after each match
+- `--context N, -c N`: Show N lines before and after each match
 
 **Output Options:**
 
-- `--stats, --s`: Display search statistics (pattern, files searched, matches found, etc.)
+- `--stats, -s`: Display search statistics (pattern, files searched, matches found, etc.)
 
 **Directory Options:**
 
-- `--recursive, --r`: Recursively search through all files in a directory and its subdirectories
+- `--recursive, -r`: Recursively search through all files in a directory and its subdirectories
 
 **Other Options:**
 
