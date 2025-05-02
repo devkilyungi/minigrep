@@ -62,7 +62,7 @@ where
     // Process remaining arguments
     // Supported formats:
     // 1. minigrep <query> <file>
-    // 2. minigrep <query> <file> -ic/-cs (case options)
+    // 2. minigrep <query> <file> -i/-S --ignore-case/--case-sensitive (case options)
     // 3. minigrep <query> <file> --stats/-s (statistics)
     // 4. minigrep <query> <file> --context/-c/--before/-b/--after/-a [count]
     // 5. minigrep <query> <directory> --recursive/-r (recursive search)
@@ -76,8 +76,8 @@ where
 
         match arg.as_str() {
             // Case sensitivity flags
-            "-ic" => ignore_case = true,
-            "-cs" => ignore_case = false,
+            "-i" | "--ignore-case" => ignore_case = true,
+            "-S" | "--case-sensitive" => ignore_case = false,
 
             // Stats flag
             "--stats" | "-s" => show_stats = true,

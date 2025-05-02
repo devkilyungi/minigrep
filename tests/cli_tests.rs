@@ -32,7 +32,7 @@ mod integration_tests {
         let output = cmd
             .arg("THE")
             .arg("tests/fixtures/poem.txt")
-            .arg("-ic")
+            .arg("-i")
             .output()
             .expect("Failed to execute command");
 

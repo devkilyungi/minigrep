@@ -262,14 +262,14 @@ pub fn print_help() {
     print_option(
         &mut stdout,
         &cyan,
-        "-ic",
+        "--ignore-case, -i",
         "Ignore case when searching",
         "SEARCH OPTIONS",
     );
     print_option(
         &mut stdout,
         &cyan,
-        "-cs",
+        "--case-sensitive, -S",
         "Force case-sensitive search (overrides IGNORE_CASE env)",
         "SEARCH OPTIONS",
     );
@@ -352,7 +352,7 @@ pub fn print_help() {
     print_option(
         &mut stdout,
         &cyan,
-        "minigrep to poem.txt -ic",
+        "minigrep to poem.txt -i",
         "Case-insensitive search",
         "EXAMPLES",
     );
@@ -387,7 +387,7 @@ pub fn print_help() {
     print_option(
         &mut stdout,
         &cyan,
-        "minigrep to poem.txt -ic --stats",
+        "minigrep to poem.txt -i --stats",
         "Combine multiple options",
         "EXAMPLES",
     );
@@ -412,7 +412,7 @@ pub fn print_help() {
     print_option(
         &mut stdout,
         &cyan,
-        "minigrep \"\\w+ing\\b\" poem.txt -ic",
+        "minigrep \"\\w+ing\\b\" poem.txt -i",
         "Find words ending in 'ing' (case insensitive)",
         "REGEX EXAMPLES",
     );

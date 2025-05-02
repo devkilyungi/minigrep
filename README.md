@@ -25,7 +25,7 @@ A command-line tool for searching text patterns in files, inspired by the Unix `
 
 **No matches found**
 
-- Check if you need case-insensitive search with `-ic` flag
+- Check if you need case-insensitive search with `-i` or `--ignore-case` flag
 - Verify your regex pattern syntax if using regular expressions
 
 **Performance issues with large directories**
@@ -63,8 +63,8 @@ minigrep PATTERN FILENAME [SECOND_FILENAME] [OPTIONS]
 
 **Search Options:**
 
-- `-ic`: Ignore case when searching
-- `-cs`: Force case-sensitive search (overrides IGNORE_CASE env variable)
+- `--ignore-case, -i`: Ignore case when searching
+- `--case-sensitive, -S`: Force case-sensitive search (overrides IGNORE_CASE env variable)
 
 **Context Options:**
 
@@ -111,7 +111,7 @@ minigrep to poem.txt
 Search for "to" in poem.txt (case-insensitive):
 
 ```bash
-minigrep to poem.txt -ic
+minigrep to poem.txt -i
 ```
 
 Search in multiple files:
@@ -153,7 +153,7 @@ minigrep to poem.txt --stats
 Combine multiple options:
 
 ```bash
-minigrep to poem.txt sunrise.txt -ic --context 2 --stats
+minigrep to poem.txt sunrise.txt -i --context 2 --stats
 ```
 
 Recursively search through a directory:
@@ -165,7 +165,7 @@ minigrep pattern directory/ --recursive
 Recursively search with case-insensitivity:
 
 ```bash
-bashminigrep pattern directory/ --recursive -ic
+bashminigrep pattern directory/ --recursive -i
 ```
 
 Combine recursive search with statistics:
@@ -177,7 +177,7 @@ bashminigrep pattern directory/ --recursive --stats
 Combine recursive search with stats and case-insensitivity:
 
 ```bash
-bashminigrep pattern directory/ --recursive --stats -ic
+bashminigrep pattern directory/ --recursive --stats -i
 ```
 
 Find all words starting with 'w'
@@ -195,7 +195,7 @@ minigrep "s.n" sunrise.txt
 Find words ending in 'ing'
 
 ```bash
-minigrep "\w+ing\b" poem.txt -ic
+minigrep "\w+ing\b" poem.txt -i
 ```
 
 Find all words starting with 't' recursively in a directory
